@@ -59,8 +59,9 @@
   .offline-badge.offline .pip{background:var(--red);box-shadow:0 0 0 3px rgba(168,67,74,.18);}
   .offline-badge.pending,.offline-badge.syncing{color:var(--amber);background:var(--amber-soft);}
   .offline-badge.pending .pip,.offline-badge.syncing .pip{background:var(--amber);box-shadow:0 0 0 3px rgba(201,138,43,.18);}
-  .user-chip{font-size:11px;color:var(--slate-soft);display:flex;align-items:center;gap:6px;}
+  .user-chip{font-size:11px;color:var(--slate-soft);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .user-chip a{color:var(--rose-deep);font-weight:600;cursor:pointer;text-decoration:none;}
+  .role-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--rose-soft);color:var(--rose-deep);text-transform:uppercase;letter-spacing:.03em;}
 
   .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px;}
   .stat-card{background:var(--paper-card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
@@ -181,13 +182,28 @@
 
   /* ---------- Login gate ---------- */
   .login-gate{position:fixed;inset:0;background:linear-gradient(135deg, var(--rose), var(--rose-deep));z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
-  .login-card{background:#fff;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(87,58,68,.35);text-align:center;}
+  .login-card{background:#fff;border-radius:16px;padding:36px 32px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(87,58,68,.35);text-align:center;}
   .login-card .brand-mark{width:48px;height:48px;border:1.5px solid var(--rose);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--rose);font-family:'Italiana',serif;font-size:22px;margin:0 auto 14px;}
   .login-card h2{font-family:'Italiana',serif;font-weight:400;font-size:22px;margin:0 0 6px;color:var(--slate);}
   .login-card p{font-size:12.5px;color:var(--slate-soft);margin:0 0 20px;}
-  .login-names{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .login-names button{padding:12px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);font-size:14px;font-weight:700;color:var(--slate);cursor:pointer;transition:.15s;}
-  .login-names button:hover{border-color:var(--rose);color:var(--rose-deep);background:var(--rose-soft);}
+  .login-form{text-align:left;}
+  .login-form label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin-bottom:6px;}
+  .login-form input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:14px;font-family:'Urbanist',sans-serif;}
+  .login-form button{width:100%;padding:11px;border-radius:9px;}
+  .login-error{color:var(--red);font-size:12.5px;background:var(--red-soft);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
+  .login-error.show{display:block;}
+
+  /* ---------- Manage users modal ---------- */
+  .modal-card{background:#fff;border-radius:16px;padding:26px 26px 22px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(87,58,68,.35);max-height:86vh;overflow-y:auto;}
+  .modal-card h2{font-family:'Italiana',serif;font-weight:400;font-size:20px;margin:0 0 4px;color:var(--slate);}
+  .modal-card .sub{font-size:12px;color:var(--slate-soft);margin:0 0 18px;}
+  .user-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #f4e9eb;font-size:13px;}
+  .user-row .name{font-weight:700;color:var(--slate);}
+  .user-row .uname{color:var(--slate-soft);font-size:11.5px;}
+  .add-user-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .add-user-form input, .add-user-form select{padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;grid-column:span 1;}
+  .add-user-form button{grid-column:span 2;padding:9px;border-radius:8px;}
+  .modal-close-row{display:flex;justify-content:flex-end;margin-top:16px;}
 
   @media (max-width: 980px){
     .app{grid-template-columns:1fr;}
@@ -201,13 +217,43 @@
 </head>
 <body>
 
-<!-- LOGIN GATE (name-picker — replaces Google-account detection since the app is no longer served by Google) -->
+<!-- LOGIN GATE -->
 <div class="login-gate" id="loginGate" style="display:none;">
   <div class="login-card">
     <div class="brand-mark">O</div>
-    <h2>Who's this?</h2>
-    <p>Pick your name to start logging NDRs. Remembered on this device.</p>
-    <div class="login-names" id="loginNames"></div>
+    <h2>Sign in</h2>
+    <p>Ornaza NDR Control Tower</p>
+    <div class="login-error" id="loginError"></div>
+    <form class="login-form" id="loginForm" onsubmit="return false;">
+      <label for="li_username">Username</label>
+      <input id="li_username" autocomplete="username" autocapitalize="off">
+      <label for="li_password">Password</label>
+      <input id="li_password" type="password" autocomplete="current-password">
+      <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Log in</button>
+    </form>
+  </div>
+</div>
+
+<!-- MANAGE USERS MODAL -->
+<div class="overlay" id="usersOverlay"></div>
+<div class="login-gate" id="usersModal" style="display:none;background:rgba(13,19,38,.45);">
+  <div class="modal-card">
+    <h2>Manage users</h2>
+    <div class="sub">Add teammates or remove access. Only admins can see this.</div>
+    <div id="usersList"></div>
+    <div class="add-user-form">
+      <input id="nu_username" placeholder="Username">
+      <input id="nu_password" placeholder="Temp password" type="text">
+      <input id="nu_displayName" placeholder="Display name (shown on orders)">
+      <select id="nu_role">
+        <option value="agent">Agent</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="btn btn-primary" onclick="submitNewUser()">+ Add user</button>
+    </div>
+    <div class="modal-close-row">
+      <button class="btn" onclick="closeManageUsers()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -256,6 +302,7 @@
       </div>
       <div class="topbar-actions">
         <span class="offline-badge" id="offlineBadge"><span class="pip"></span>Loading…</span>
+        <button class="btn" id="manageUsersBtn" style="display:none;">👤 Manage users</button>
         <button class="btn" id="exportBtn">⭳ Export CSV</button>
         <button class="btn" id="syncBtn" title="Manually pull the latest from Google Sheets">⇄ Sync now</button>
         <button class="btn btn-primary" id="newBtn">+ New NDR Entry</button>
@@ -357,32 +404,22 @@
 
 <script>
 /* ============================================================================
-   ORNAZA NDR CONTROL TOWER — GITHUB PAGES FRONTEND
-   Talks to the Apps Script backend over fetch() as a plain JSON API (no more
-   google.script.run — this page is hosted on a different origin). Offline
-   behavior is two layers deep:
-     1. Service worker (sw.js) caches this app shell so it can literally
-        launch with zero internet, even on first open after one successful visit.
-     2. A local-storage queue holds unsynced edits and retries them in the
-        background whenever the API is reachable.
+   ORNAZA NDR CONTROL TOWER — GITHUB PAGES FRONTEND (real per-user login)
    ============================================================================ */
 
 // ---------------------------------------------------------------------------
-// CONFIG — fill these in after you deploy the Apps Script backend.
-// See GITHUB_DEPLOYMENT_GUIDE.md for exactly where to get each value.
+// CONFIG — the only thing you should need to edit.
 // ---------------------------------------------------------------------------
 const API_BASE = 'https://script.google.com/macros/s/AKfycbx9nDDk0UF4WrEdTO0BkkJ4Mt4gnTh_hkdbiUfebzCiGeXVrtEAD6BeLnbTgbjy2JAE/exec';
-const API_KEY  = '851336b99632416e89fe4ec934333e18';
 
 const TODAY = new Date();
-const FALLBACK_AGENTS = ['Jayesh','Priya','Rahul','Sneha','Vikram','Anjali'];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 let orders = [];
-let AGENTS = FALLBACK_AGENTS.slice();
-let agentsFull = [];
+let AGENTS = [];
 let slaAutoRtoDays = 5;
-let currentUser = { name: '' };
+let currentUser = { username:'', role:'', displayName:'' };
+let authToken = '';
 let pendingChanges = {};
 let lastSyncTime = null;
 let syncInFlight = false;
@@ -402,39 +439,80 @@ function loadLocalCache(){
   try{ const o = JSON.parse(localStorage.getItem('ndr_cache_orders')||'[]'); orders = Array.isArray(o) ? o : []; }catch(e){ orders = []; }
   try{
     const a = JSON.parse(localStorage.getItem('ndr_cache_agents')||'null');
-    if(Array.isArray(a) && a.length){ agentsFull = a; AGENTS = a.map(x=>x.name); }
+    if(Array.isArray(a) && a.length){ AGENTS = a.map(x=>x.name); }
   }catch(e){}
   try{
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.SLA_DAYS){ slaAutoRtoDays = parseInt(s.SLA_DAYS,10) || 5; }
   }catch(e){}
   try{ pendingChanges = JSON.parse(localStorage.getItem('ndr_pending_changes')||'{}'); }catch(e){ pendingChanges = {}; }
-  const savedName = localStorage.getItem('ndr_user_name');
-  if(savedName) currentUser.name = savedName;
+  authToken = localStorage.getItem('ndr_token') || '';
+  try{
+    const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
+    if(u) currentUser = u;
+  }catch(e){}
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
-function saveAgentsCache(){ localStorage.setItem('ndr_cache_agents', JSON.stringify(agentsFull)); }
+function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
 function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
+function saveSession(){
+  localStorage.setItem('ndr_token', authToken);
+  localStorage.setItem('ndr_user', JSON.stringify(currentUser));
+}
+function clearSession(){
+  localStorage.removeItem('ndr_token');
+  localStorage.removeItem('ndr_user');
+  authToken = '';
+  currentUser = { username:'', role:'', displayName:'' };
+}
 
-/* ---------------- login gate ---------------- */
-function renderLoginGate(){
-  const box = document.getElementById('loginNames');
-  const names = AGENTS.length ? AGENTS : FALLBACK_AGENTS;
-  box.innerHTML = names.map(n=>`<button onclick="pickUser('${n.replace(/'/g,"\\'")}')">${escapeHtml(n)}</button>`).join('');
-}
-function pickUser(name){
-  currentUser.name = name;
-  localStorage.setItem('ndr_user_name', name);
-  document.getElementById('loginGate').style.display = 'none';
-  renderCurrentUser();
-  startApp();
-}
-function switchUser(){
-  localStorage.removeItem('ndr_user_name');
-  currentUser.name = '';
-  renderLoginGate();
+/* ---------------- login ---------------- */
+function showLoginGate(message){
   document.getElementById('loginGate').style.display = 'flex';
+  const err = document.getElementById('loginError');
+  if(message){ err.textContent = message; err.classList.add('show'); } else { err.classList.remove('show'); err.textContent=''; }
+}
+function hideLoginGate(){
+  document.getElementById('loginGate').style.display = 'none';
+}
+function doLogin(){
+  const username = document.getElementById('li_username').value.trim();
+  const password = document.getElementById('li_password').value;
+  const err = document.getElementById('loginError');
+  if(!username || !password){ err.textContent='Enter both username and password.'; err.classList.add('show'); return; }
+  const btn = document.getElementById('loginSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  fetch(API_BASE, { method:'POST', body: JSON.stringify({ action:'login', username, password }) })
+    .then(r=>r.json())
+    .then(res=>{
+      btn.disabled = false; btn.textContent = 'Log in';
+      if(!res || !res.ok){
+        err.textContent = (res && res.error) || 'Login failed — check your connection.';
+        err.classList.add('show');
+        return;
+      }
+      authToken = res.token;
+      currentUser = res.user;
+      saveSession();
+      hideLoginGate();
+      document.getElementById('li_password').value = '';
+      renderCurrentUser();
+      startApp();
+    })
+    .catch(()=>{
+      btn.disabled = false; btn.textContent = 'Log in';
+      err.textContent = "Couldn't reach the server. Check your internet connection and try again.";
+      err.classList.add('show');
+    });
+}
+function logout(){
+  clearSession();
+  location.reload();
+}
+function handleUnauthorized(){
+  clearSession();
+  showLoginGate('Your session expired — please log in again.');
 }
 
 /* ---------------- helpers ---------------- */
@@ -703,8 +781,9 @@ function renderTable(){
 }
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
-  if(!currentUser.name){ el.textContent=''; return; }
-  el.innerHTML = `Signed in as ${escapeHtml(currentUser.name)} · <a onclick="switchUser()">switch</a>`;
+  if(!currentUser.username){ el.innerHTML=''; return; }
+  el.innerHTML = `Signed in as ${escapeHtml(currentUser.displayName)} <span class="role-pill">${escapeHtml(currentUser.role)}</span> · <a onclick="changePasswordPrompt()">change password</a> · <a onclick="logout()">log out</a>`;
+  document.getElementById('manageUsersBtn').style.display = currentUser.role === 'admin' ? 'inline-flex' : 'none';
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
@@ -738,21 +817,27 @@ function renderAll(){
   updateSyncBadge();
 }
 
-/* ---------------- API layer (fetch-based, replaces google.script.run) ---------------- */
-function apiUrl(action, extra){
-  const params = new URLSearchParams(Object.assign({ action, apiKey: API_KEY }, extra||{}));
-  return API_BASE + '?' + params.toString();
+/* ---------------- authenticated API layer ---------------- */
+function apiGet(action, extraParams){
+  const params = new URLSearchParams(Object.assign({ action, token: authToken }, extraParams||{}));
+  return fetch(API_BASE + '?' + params.toString(), { method:'GET' }).then(r=>r.json());
 }
-function apiConfigured(){
-  return API_BASE && API_BASE.indexOf('PASTE_YOUR') === -1;
+function apiPost(action, extra){
+  return fetch(API_BASE, {
+    method: 'POST',
+    body: JSON.stringify(Object.assign({ action, token: authToken }, extra||{}))
+  }).then(r=>r.json());
+}
+function checkAuthResult(res){
+  if(res && res.unauthorized){ handleUnauthorized(); return false; }
+  return true;
 }
 
 function bootstrapFromServer(){
-  if(!apiConfigured()) return;
+  if(!authToken) return;
   updateSyncBadge('syncing');
-  fetch(apiUrl('bootstrap'), { method:'GET' })
-    .then(r=>r.json())
-    .then(onBootstrapSuccess)
+  apiGet('bootstrap')
+    .then(res=>{ if(checkAuthResult(res)) onBootstrapSuccess(res); })
     .catch(err=>{ console.warn('Bootstrap failed (offline?):', err); updateSyncBadge(); });
 }
 function onBootstrapSuccess(res){
@@ -763,7 +848,7 @@ function onBootstrapSuccess(res){
     if(!merged.find(o=>o.id===id)) merged.push(pendingChanges[id].payload);
   });
   orders = merged;
-  if(res.agents && res.agents.length){ agentsFull = res.agents; AGENTS = res.agents.map(a=>a.name); saveAgentsCache(); }
+  if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
     const slaInput = document.getElementById('slaDays');
@@ -794,25 +879,17 @@ function scheduleSyncSoon(delay){
 }
 function attemptSync(){
   const ids = Object.keys(pendingChanges);
-  if(!ids.length || syncInFlight || !apiConfigured()) return;
+  if(!ids.length || syncInFlight || !authToken) return;
   syncInFlight = true;
   const batch = ids.map(id => pendingChanges[id]);
   updateSyncBadge('syncing');
-  // Sent as a plain string body (not application/json) so the browser treats
-  // this as a CORS "simple request" and skips the preflight OPTIONS call
-  // Apps Script doesn't handle.
-  fetch(API_BASE, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'sync',
-      apiKey: API_KEY,
-      user: currentUser.name,
-      changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, payload:b.payload}))
+  apiPost('sync', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, payload:b.payload})) })
+    .then(res => {
+      syncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      onSyncSuccess(res, batch);
     })
-  })
-  .then(r=>r.json())
-  .then(res => { syncInFlight=false; onSyncSuccess(res, batch); })
-  .catch(err => { syncInFlight=false; onSyncFailure(err); });
+    .catch(err => { syncInFlight=false; onSyncFailure(err); });
 }
 function onSyncSuccess(res, sentBatch){
   if(!res){ scheduleSyncSoon(15000); return; }
@@ -842,11 +919,80 @@ function onSyncFailure(err){
   scheduleSyncSoon(15000);
 }
 function pushSlaSetting(){
-  if(!apiConfigured()) return;
-  fetch(API_BASE, {
-    method: 'POST',
-    body: JSON.stringify({ action:'setSetting', apiKey: API_KEY, key:'SLA_DAYS', value: slaAutoRtoDays })
-  }).catch(()=>{ /* stays local until back online */ });
+  if(!authToken) return;
+  apiPost('setSetting', { key:'SLA_DAYS', value: slaAutoRtoDays })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+
+/* ---------------- manage users (admin only) ---------------- */
+function openManageUsers(){
+  document.getElementById('usersOverlay').classList.add('show');
+  document.getElementById('usersModal').style.display = 'flex';
+  loadUsersList();
+}
+function closeManageUsers(){
+  document.getElementById('usersOverlay').classList.remove('show');
+  document.getElementById('usersModal').style.display = 'none';
+}
+function loadUsersList(){
+  const box = document.getElementById('usersList');
+  box.innerHTML = '<div style="color:var(--slate-soft);font-size:12.5px;">Loading…</div>';
+  apiPost('listUsers')
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      if(!res.ok){ box.innerHTML = `<div style="color:var(--red);font-size:12.5px;">${escapeHtml(res.error||'Failed to load users')}</div>`; return; }
+      box.innerHTML = res.users.map(u=>`
+        <div class="user-row">
+          <div>
+            <div class="name">${escapeHtml(u.displayName)} <span class="role-pill">${escapeHtml(u.role)}</span>${u.active?'':' <span style="color:var(--red);font-weight:700;">(inactive)</span>'}</div>
+            <div class="uname">@${escapeHtml(u.username)}</div>
+          </div>
+          ${u.active && u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="mini-btn" onclick="deactivateUserRow('${escapeHtml(u.username)}')">Remove</button>` : ''}
+        </div>
+      `).join('') || '<div style="color:var(--slate-soft);font-size:12.5px;">No users yet.</div>';
+    })
+    .catch(()=>{ box.innerHTML = '<div style="color:var(--red);font-size:12.5px;">Could not load — check your connection.</div>'; });
+}
+function submitNewUser(){
+  const username = document.getElementById('nu_username').value.trim();
+  const password = document.getElementById('nu_password').value;
+  const displayName = document.getElementById('nu_displayName').value.trim();
+  const role = document.getElementById('nu_role').value;
+  if(!username || !password){ alert('Username and a temporary password are required.'); return; }
+  apiPost('createUser', { username, password, displayName, role })
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      if(!res.ok){ alert(res.error || 'Could not add user.'); return; }
+      document.getElementById('nu_username').value = '';
+      document.getElementById('nu_password').value = '';
+      document.getElementById('nu_displayName').value = '';
+      loadUsersList();
+      bootstrapFromServer(); // refresh the Agent dropdown with the new person
+    })
+    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
+}
+function deactivateUserRow(username){
+  if(!confirm(`Remove access for @${username}? They won't be able to log in anymore.`)) return;
+  apiPost('deactivateUser', { username })
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      if(!res.ok){ alert(res.error || 'Could not remove user.'); return; }
+      loadUsersList();
+    })
+    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
+}
+function changePasswordPrompt(){
+  const oldPassword = prompt('Current password:');
+  if(oldPassword === null) return;
+  const newPassword = prompt('New password (4+ characters):');
+  if(newPassword === null) return;
+  apiPost('changePassword', { oldPassword, newPassword })
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      alert(res.ok ? 'Password updated.' : (res.error || 'Could not update password.'));
+    })
+    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
 }
 
 /* ---------------- drawer ---------------- */
@@ -982,7 +1128,7 @@ function saveDrawer(){
 
 /* ---------------- new entry ---------------- */
 function openNewEntry(){
-  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), awb:'', reason:'', priority:'HIGH', a1:'', a2:'', a3:'', feedback:'', wa:false, status:'PENDING', payment:'', phone:'', agent: currentUser.name || 'Unassigned'};
+  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), awb:'', reason:'', priority:'HIGH', a1:'', a2:'', a3:'', feedback:'', wa:false, status:'PENDING', payment:'', phone:'', agent: currentUser.displayName || 'Unassigned'};
   activeDrawerOrder = '__new__';
   orders.push(blank);
   openDrawer(blank);
@@ -1046,32 +1192,35 @@ function bindEvents(){
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
   document.getElementById('newBtn').addEventListener('click', openNewEntry);
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
+  document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
+  document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
     if(activeDrawerOrder==='__new__') orders = orders.filter(o=>o.id!=='__new__');
     closeDrawer();
   });
+  document.getElementById('loginForm').addEventListener('submit', doLogin);
+  document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
   window.addEventListener('online', ()=>{ attemptSync(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 20000);
-  setInterval(()=>{ bootstrapFromServer(); }, 5 * 60000);
+  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 5 * 60000);
 }
 
 /* ---------------- init ---------------- */
 function startApp(){
   document.getElementById('slaDays').value = slaAutoRtoDays;
-  bindEvents();
   renderAll();            // instant paint from cache — works even fully offline
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
 loadLocalCache();
-renderLoginGate();
-if(currentUser.name){
-  document.getElementById('loginGate').style.display = 'none';
+bindEvents();
+if(authToken && currentUser.username){
+  hideLoginGate();
   renderCurrentUser();
   startApp();
 } else {
-  document.getElementById('loginGate').style.display = 'flex';
+  showLoginGate();
 }
 
 if('serviceWorker' in navigator){
