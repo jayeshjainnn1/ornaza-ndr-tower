@@ -1202,8 +1202,8 @@ function bindEvents(){
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
   window.addEventListener('online', ()=>{ attemptSync(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
-  setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 20000);
-  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 5 * 60000);
+  setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 10000);
+  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 30000);
 }
 
 /* ---------------- init ---------------- */
