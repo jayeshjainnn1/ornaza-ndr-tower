@@ -39,7 +39,6 @@
   .sync-problem-banner{background:var(--red);color:#fff;padding:10px 16px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap;}
   .sync-problem-banner .pip{width:7px;height:7px;border-radius:50%;background:#fff;flex-shrink:0;}
   .sync-problem-banner button{padding:6px 12px;font-size:12.5px;background:#fff;color:var(--red);border:none;border-radius:8px;font-weight:700;cursor:pointer;}
-  .sync-problem-banner button:hover{background:#fce9e8;}
 
   .rail{background:var(--rose);color:#fceff1;display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:sticky;top:var(--banner-offset,0px);height:calc(100vh - var(--banner-offset,0px));}
   .rail .brand-mark{width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Italiana',serif;font-weight:400;font-size:16px;margin-bottom:22px;}
@@ -60,13 +59,10 @@
   .topbar .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate-soft);font-weight:600;margin-bottom:2px;}
   .topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 
-  .btn{border:1px solid var(--line);background:#fff;color:var(--slate);padding:9px 14px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s;}
-  .btn:hover{border-color:var(--rose);color:var(--rose-deep);}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--slate);padding:9px 14px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
   .btn-primary{background:var(--rose);color:#fff;border-color:var(--rose);}
-  .btn-primary:hover{background:var(--rose-deep);border-color:var(--rose-deep);color:#fff;}
   .btn-ghost{background:transparent;border-color:transparent;color:var(--slate-soft);}
   .btn[disabled]{opacity:.45;cursor:not-allowed;}
-  .btn[disabled]:hover{border-color:var(--line);}
 
   .offline-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--green);background:var(--green-soft);padding:6px 10px;border-radius:20px;font-weight:600;}
   .offline-badge .pip{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(47,111,78,.18);}
@@ -105,7 +101,7 @@
   .alert-card .reason{font-size:12px;color:var(--slate-soft);margin:3px 0 6px;}
   .alert-card .stale{font-size:11px;color:var(--red);font-weight:700;}
   .alert-actions{display:flex;gap:6px;margin-top:8px;}
-  .mini-btn{font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid rgba(178,58,46,.35);background:#fff;cursor:pointer;color:var(--red);font-weight:600;}
+  .mini-btn{font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid rgba(178,58,46,.35);background:#fff;cursor:pointer;color:var(--red);font-weight:600;touch-action:manipulation;}
   .no-alerts{color:var(--green);font-size:13px;font-weight:600;padding:6px 0;}
 
   .insights-row{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:22px;}
@@ -143,7 +139,7 @@
   .search-box input{width:100%;padding:9px 12px 9px 32px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;}
   .search-box::before{content:'⌕';position:absolute;left:11px;top:8px;color:var(--slate-soft);font-size:15px;}
   .chip-group{display:flex;gap:6px;flex-wrap:wrap;}
-  .chip{padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate-soft);}
+  .chip{padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--slate-soft);touch-action:manipulation;}
   .chip.active{background:var(--rose);color:#fff;border-color:var(--rose);}
   select.reason-filter{padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;background:#fff;color:var(--slate);}
 
@@ -152,7 +148,6 @@
   thead th{text-align:left;background:#fbf3f4;color:var(--slate-soft);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;}
   tbody td{padding:10px 12px;border-bottom:1px solid #f4e9eb;vertical-align:middle;}
   tbody tr{cursor:pointer;transition:background .1s;}
-  tbody tr:hover{background:#fdf6f7;}
   tbody tr:last-child td{border-bottom:none;}
   .oid-cell{font-family:'JetBrains Mono',monospace;font-weight:700;}
   .awb-cell{font-family:'JetBrains Mono',monospace;color:var(--slate-soft);font-size:12px;}
@@ -169,8 +164,7 @@
   .stamp.rto{color:var(--red);border-color:var(--red);background:var(--red-soft);}
 
   .row-actions{display:flex;gap:6px;}
-  .icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;}
-  .icon-btn:hover{border-color:var(--slate-soft);}
+  .icon-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;touch-action:manipulation;}
 
   .empty-state{padding:40px 20px;text-align:center;color:var(--slate-soft);}
   .empty-state .glyph{font-size:26px;margin-bottom:8px;}
@@ -234,6 +228,20 @@
     .stats-row{grid-template-columns:repeat(2,1fr);}
     .insights-row{grid-template-columns:1fr;}
     .main{padding:16px;}
+  }
+
+  /* Hover effects ONLY for devices with a real mouse/trackpad. Applying
+     :hover styles unscoped on touchscreens is a well-known cause of
+     buttons intermittently needing two taps — the first tap gets consumed
+     simulating the hover state, and only the second tap actually clicks.
+     This was very likely why "Save changes" sometimes did nothing. */
+  @media (hover:hover) and (pointer:fine){
+    .btn:hover{border-color:var(--rose);color:var(--rose-deep);}
+    .btn-primary:hover{background:var(--rose-deep);border-color:var(--rose-deep);color:#fff;}
+    .btn[disabled]:hover{border-color:var(--line);}
+    .sync-problem-banner button:hover{background:#fce9e8;}
+    tbody tr:hover{background:#fdf6f7;}
+    .icon-btn:hover{border-color:var(--slate-soft);}
   }
 </style>
 </head>
@@ -885,6 +893,15 @@ function onBootstrapSuccess(res){
   Object.keys(pendingChanges).forEach(id=>{
     if(!merged.find(o=>o.id===id)) merged.push(pendingChanges[id].payload);
   });
+  // THE FIX: a background refresh (runs every 15s) used to silently wipe
+  // out an in-progress "+ New NDR Entry" draft that hadn't been saved yet
+  // — because it doesn't exist on the server or in pendingChanges, it just
+  // vanished from the list. Then clicking "Save changes" couldn't find it
+  // and did nothing, with zero explanation. Never drop it mid-edit.
+  const inProgressDraft = orders.find(o=>o.id==='__new__');
+  if(inProgressDraft && !merged.find(o=>o.id==='__new__')){
+    merged.push(inProgressDraft);
+  }
   orders = merged;
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
@@ -1256,7 +1273,10 @@ function saveDrawer(){
   // there doing nothing with no explanation.
   try {
     const o = orders.find(x=>x.id===activeDrawerOrder);
-    if(!o) return;
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
     const isNewEntry = activeDrawerOrder === '__new__';
 
     if(isNewEntry){
