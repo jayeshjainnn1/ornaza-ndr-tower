@@ -1111,7 +1111,7 @@ function openDrawer(order){
       <div class="drawer-error" id="drawerError" style="display:none;"></div>
       <div class="field-group">
         <label>Date (NDR logged)</label>
-        <input type="date" id="d_date" value="${o.date||''}">
+        <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
       </div>
       <div class="field-group">
         <label>NDR Reason</label>
@@ -1141,9 +1141,9 @@ function openDrawer(order){
       </div>
       <div class="field-group">
         <label>Delivery attempts</label>
-        <div class="attempt-row"><div class="n">1</div><input type="date" id="d_a1" value="${o.a1||''}"></div>
-        <div class="attempt-row"><div class="n">2</div><input type="date" id="d_a2" value="${o.a2||''}"></div>
-        <div class="attempt-row"><div class="n">3</div><input type="date" id="d_a3" value="${o.a3||''}"></div>
+        <div class="attempt-row"><div class="n">1</div><input type="date" id="d_a1" value="${o.a1||''}" onpaste="handleDatePaste(event,this)"></div>
+        <div class="attempt-row"><div class="n">2</div><input type="date" id="d_a2" value="${o.a2||''}" onpaste="handleDatePaste(event,this)"></div>
+        <div class="attempt-row"><div class="n">3</div><input type="date" id="d_a3" value="${o.a3||''}" onpaste="handleDatePaste(event,this)"></div>
         <button class="btn btn-ghost" style="padding:6px 0;font-size:12.5px;" onclick="logAttemptToday()">+ Log an attempt for today</button>
       </div>
       <div class="field-group">
@@ -1202,6 +1202,44 @@ function showToast(message, type){
   el.textContent = message;
   stack.appendChild(el);
   setTimeout(()=>{ el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(()=>el.remove(), 300); }, type==='error' ? 6000 : 3000);
+}
+/* Native <input type="date"> fields silently reject pasted text that isn't
+   already in exact YYYY-MM-DD format — on many phones you can't paste a
+   date at all otherwise. This intercepts the paste, tries to recognize
+   common formats (15/05/2026, 2026-05-15, 15 May 2026, etc.) and converts
+   it to the format the field will actually accept, instead of the paste
+   just silently doing nothing. */
+function handleDatePaste(event, inputEl){
+  const raw = (event.clipboardData || window.clipboardData);
+  const text = raw ? raw.getData('text').trim() : '';
+  const iso = parseFlexibleDate(text);
+  if(iso){
+    event.preventDefault();
+    inputEl.value = iso;
+    inputEl.dispatchEvent(new Event('input', { bubbles:true }));
+  }
+  // If we can't confidently recognize the format, let the browser try its
+  // own default paste handling rather than blocking it further.
+}
+function pad2_(n){ return String(n).padStart(2,'0'); }
+function parseFlexibleDate(text){
+  if(!text) return null;
+  let m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${pad2_(m[2])}-${pad2_(m[3])}`;
+
+  m = text.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(m){
+    const d = parseInt(m[1],10), mo = parseInt(m[2],10), y = parseInt(m[3],10);
+    if(mo>=1 && mo<=12 && d>=1 && d<=31) return `${y}-${pad2_(mo)}-${pad2_(d)}`;
+  }
+
+  const MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  m = text.toLowerCase().replace(',', '').match(/^(\d{1,2})\s+([a-z]{3,9})\s+(\d{4})$/);
+  if(m && MONTHS[m[2].slice(0,3)]) return `${m[3]}-${pad2_(MONTHS[m[2].slice(0,3)])}-${pad2_(m[1])}`;
+  m = text.toLowerCase().replace(',', '').match(/^([a-z]{3,9})\s+(\d{1,2})\s+(\d{4})$/);
+  if(m && MONTHS[m[1].slice(0,3)]) return `${m[3]}-${pad2_(MONTHS[m[1].slice(0,3)])}-${pad2_(m[2])}`;
+
+  return null;
 }
 function logAttemptToday(){
   const todayISO = TODAY.toISOString().slice(0,10);
