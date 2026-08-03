@@ -1263,7 +1263,16 @@ function openNewEntry(){
   document.getElementById('drawerTitle').textContent = 'New NDR entry';
   document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID + AWB below';
   const reasonField = document.getElementById('d_reason');
-  reasonField.insertAdjacentHTML('beforebegin', '<label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID &amp; AWB</label><div style="display:flex;gap:8px;margin-bottom:16px;"><input id="d_id" placeholder="OZ00000" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"><input id="d_awb" placeholder="AWB number" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+  reasonField.insertAdjacentHTML('beforebegin', '<label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID &amp; AWB</label><div style="display:flex;gap:8px;margin-bottom:16px;"><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"><input id="d_awb" placeholder="AWB number" autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+
+  // Autofocus the Order ID field the instant it exists — on some phones,
+  // tapping an input while the drawer is still sliding into place (the
+  // opening animation) doesn't register as a proper focus, so the very
+  // first paste attempt does nothing and only the second try (after the
+  // drawer has settled) works. Focusing it here, still inside the same
+  // click handler as opening the drawer, sidesteps that entirely.
+  const d_idField = document.getElementById('d_id');
+  if(d_idField) d_idField.focus();
 }
 
 /* ---------------- whatsapp ---------------- */
