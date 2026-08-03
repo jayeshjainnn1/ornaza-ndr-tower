@@ -1,15 +1,25 @@
 /**
- * Service worker — this is what lets the NDR Control Tower launch with
- * zero internet after the first successful visit. It caches the app shell
- * (HTML/CSS/JS/manifest/icons) and serves it from cache first, updating
- * the cache in the background whenever the network is available.
+ * Service worker — lets the NDR Control Tower launch with zero internet
+ * after the first successful visit.
+ *
+ * IMPORTANT CHANGE (v2): this used to be cache-first (serve the cached
+ * copy instantly, refresh the cache quietly in the background for NEXT
+ * time). That caused a real problem: whenever the app was updated, some
+ * devices kept showing an old, stale, possibly-buggy cached copy for a
+ * long time instead of the fix, with no obvious sign anything was wrong.
+ *
+ * Now it's NETWORK-FIRST: whenever there's a connection, it always tries
+ * to fetch the live version first and only falls back to the cached copy
+ * if the network request fails (i.e. you're genuinely offline). This
+ * guarantees you get the latest version whenever you have internet, while
+ * still keeping the "launch with zero internet" ability intact.
  *
  * It deliberately does NOT touch requests to the Apps Script API
  * (script.google.com) — those are handled by the app's own offline queue
  * in index.html, which is a better fit for read/write data than a
- * cache-first service worker would be.
+ * service-worker cache would be.
  */
-const CACHE_NAME = 'ndr-tower-v1';
+const CACHE_NAME = 'ndr-tower-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -44,17 +54,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const networkFetch = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const resClone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
+    fetch(req, { cache: 'no-store' })
+      .then((res) => {
+        if (res && res.status === 200) {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });
