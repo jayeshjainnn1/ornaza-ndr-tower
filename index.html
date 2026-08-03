@@ -861,11 +861,16 @@ function onBootstrapSuccess(res){
   if(Object.keys(pendingChanges).length) attemptSync();
 }
 
-function queueChange(order){
+function queueChange(order, isNew){
+  // Once a not-yet-synced order is flagged "new", keep it flagged that way
+  // even if the user edits it again before the first sync completes —
+  // from the server's point of view it still hasn't seen this Order ID yet.
+  const wasNew = pendingChanges[order.id] && pendingChanges[order.id].isNew;
   pendingChanges[order.id] = {
     changeId: uuidShort(),
     orderId: order.id,
     action: 'upsert',
+    isNew: !!isNew || !!wasNew,
     payload: JSON.parse(JSON.stringify(order)),
     queuedAt: new Date().toISOString()
   };
@@ -883,7 +888,7 @@ function attemptSync(){
   syncInFlight = true;
   const batch = ids.map(id => pendingChanges[id]);
   updateSyncBadge('syncing');
-  apiPost('sync', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, payload:b.payload})) })
+  apiPost('sync', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
     .then(res => {
       syncInFlight=false;
       if(!checkAuthResult(res)) return;
@@ -900,6 +905,12 @@ function onSyncSuccess(res, sentBatch){
   });
   (res.rejected||[]).forEach(r=>{
     if(pendingChanges[r.orderId]) delete pendingChanges[r.orderId];
+    if(r.duplicate){
+      // This was a duplicate Order ID — remove the phantom "new" row from
+      // this device so it doesn't look like it saved. The real, original
+      // order (from whoever created it first) will show up on the next sync.
+      orders = orders.filter(o=>o.id!==r.orderId);
+    }
     console.warn('NDR sync rejected for', r.orderId, '-', r.reason);
   });
   (res.orders||[]).forEach(o=>{
@@ -911,6 +922,9 @@ function onSyncSuccess(res, sentBatch){
   saveOrdersCache();
   lastSyncTime = new Date();
   renderAll();
+  if(res.rejected && res.rejected.length){
+    alert('Could not save:\n\n' + res.rejected.map(r=>'• '+r.reason).join('\n'));
+  }
   if(Object.keys(pendingChanges).length) scheduleSyncSoon(4000);
 }
 function onSyncFailure(err){
@@ -1098,10 +1112,12 @@ function logAttemptToday(){
 function saveDrawer(){
   const o = orders.find(x=>x.id===activeDrawerOrder);
   if(!o) return;
+  const isNewEntry = activeDrawerOrder === '__new__';
 
-  if(activeDrawerOrder === '__new__'){
+  if(isNewEntry){
     const idVal = document.getElementById('d_id').value.trim();
     if(!idVal){ alert('Please enter an Order ID before saving.'); return; }
+    // First line of defense: check against what this device already knows about.
     if(orders.some(x=>x.id===idVal && x !== o)){ alert('Order ID '+idVal+' already exists.'); return; }
     o.id = idVal;
     o.awb = document.getElementById('d_awb').value.trim();
@@ -1120,7 +1136,7 @@ function saveDrawer(){
   o.status = document.getElementById('d_status').value;
   o.agent = document.getElementById('d_agent').value;
 
-  queueChange(o);
+  queueChange(o, isNewEntry);
   saveOrdersCache();
   closeDrawer();
   renderAll();
