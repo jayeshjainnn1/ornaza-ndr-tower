@@ -412,6 +412,13 @@
       <select class="reason-filter" id="monthFilter"><option value="ALL">All months</option></select>
       <select class="reason-filter" id="reasonFilter"><option value="ALL">All reasons</option></select>
       <select class="reason-filter" id="agentFilter"><option value="ALL">All agents</option></select>
+      <select class="reason-filter" id="attemptFilter">
+        <option value="ALL">All attempts</option>
+        <option value="0">No attempt yet</option>
+        <option value="1">1 attempt logged</option>
+        <option value="2">2 attempts logged</option>
+        <option value="3">3 attempts logged</option>
+      </select>
     </div>
 
     <!-- TABLE -->
@@ -472,7 +479,8 @@ let lastSyncTime = null;
 let syncInFlight = false;
 let syncTimer = null;
 
-let filters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+let filters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL', attempt:'ALL' };
+function attemptCount_(o){ return [o.a1,o.a2,o.a3].filter(Boolean).length; }
 let activeDrawerOrder = null;
 
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
@@ -770,6 +778,7 @@ function applyFilters(){
     if(filters.reason!=='ALL' && o.reason!==filters.reason) return false;
     if(filters.agent!=='ALL' && (o.agent||'Unassigned')!==filters.agent) return false;
     if(filters.month!=='ALL' && monthKey(o.date)!==filters.month) return false;
+    if(filters.attempt!=='ALL' && String(attemptCount_(o))!==filters.attempt) return false;
     if(filters.search){
       const s = filters.search.toLowerCase();
       const hay = `${o.id} ${o.awb} ${o.feedback}`.toLowerCase();
@@ -1388,6 +1397,7 @@ function bindEvents(){
   document.getElementById('reasonFilter').addEventListener('change', e=>{ filters.reason = e.target.value; renderTable(); });
   document.getElementById('agentFilter').addEventListener('change', e=>{ filters.agent = e.target.value; renderTable(); });
   document.getElementById('monthFilter').addEventListener('change', e=>{ filters.month = e.target.value; renderTable(); });
+  document.getElementById('attemptFilter').addEventListener('change', e=>{ filters.attempt = e.target.value; renderTable(); });
   document.getElementById('slaDays').addEventListener('input', e=>{
     const v = parseInt(e.target.value, 10);
     slaAutoRtoDays = (v && v > 0) ? v : 5;
