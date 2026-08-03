@@ -194,6 +194,13 @@
   .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:16px;}
   .drawer-actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
   .drawer-note{font-size:11.5px;color:var(--slate-soft);background:var(--paper);padding:8px 10px;border-radius:7px;margin-top:16px;line-height:1.5;}
+  .drawer-error{background:var(--red-soft);color:var(--red);padding:9px 11px;border-radius:7px;font-size:12.5px;margin-bottom:16px;font-weight:600;line-height:1.4;}
+
+  /* ---------- Toast (replaces unreliable alert() popups on installed/mobile apps) ---------- */
+  .toast-stack{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+  .toast{background:var(--slate);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:min(90vw,420px);text-align:center;line-height:1.4;}
+  .toast.error{background:var(--red);}
+  .toast.success{background:var(--green);}
 
   /* ---------- Login gate ---------- */
   .login-gate{position:fixed;inset:0;background:linear-gradient(135deg, var(--rose), var(--rose-deep));z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -431,6 +438,7 @@
 
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="drawer"></aside>
+<div class="toast-stack" id="toastStack"></div>
 
 <script>
 /* ============================================================================
@@ -975,7 +983,7 @@ function onSyncSuccess(res, sentBatch){
   lastSyncTime = new Date();
   renderAll();
   if(res.rejected && res.rejected.length){
-    alert('Could not save:\n\n' + res.rejected.map(r=>'• '+r.reason).join('\n'));
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
   }
   if(Object.keys(pendingChanges).length) scheduleSyncSoon(4000);
 }
@@ -1042,28 +1050,30 @@ function submitNewUser(){
   const password = document.getElementById('nu_password').value;
   const displayName = document.getElementById('nu_displayName').value.trim();
   const role = document.getElementById('nu_role').value;
-  if(!username || !password){ alert('Username and a temporary password are required.'); return; }
+  if(!username || !password){ showToast('Username and a temporary password are required.', 'error'); return; }
   apiPost('createUser', { username, password, displayName, role })
     .then(res=>{
       if(!checkAuthResult(res)) return;
-      if(!res.ok){ alert(res.error || 'Could not add user.'); return; }
+      if(!res.ok){ showToast(res.error || 'Could not add user.', 'error'); return; }
       document.getElementById('nu_username').value = '';
       document.getElementById('nu_password').value = '';
       document.getElementById('nu_displayName').value = '';
       loadUsersList();
       bootstrapFromServer(); // refresh the Agent dropdown with the new person
+      showToast('User added.', 'success');
     })
-    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
+    .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
 }
 function deactivateUserRow(username){
   if(!confirm(`Remove access for @${username}? They won't be able to log in anymore.`)) return;
   apiPost('deactivateUser', { username })
     .then(res=>{
       if(!checkAuthResult(res)) return;
-      if(!res.ok){ alert(res.error || 'Could not remove user.'); return; }
+      if(!res.ok){ showToast(res.error || 'Could not remove user.', 'error'); return; }
       loadUsersList();
+      showToast('User removed.', 'success');
     })
-    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
+    .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
 }
 function changePasswordPrompt(){
   const oldPassword = prompt('Current password:');
@@ -1073,9 +1083,9 @@ function changePasswordPrompt(){
   apiPost('changePassword', { oldPassword, newPassword })
     .then(res=>{
       if(!checkAuthResult(res)) return;
-      alert(res.ok ? 'Password updated.' : (res.error || 'Could not update password.'));
+      showToast(res.ok ? 'Password updated.' : (res.error || 'Could not update password.'), res.ok ? 'success' : 'error');
     })
-    .catch(()=>alert("Couldn't reach the server — try again once you're online."));
+    .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
 }
 
 /* ---------------- drawer ---------------- */
@@ -1098,6 +1108,7 @@ function openDrawer(order){
       <button class="drawer-close" onclick="closeDrawer()">✕</button>
     </div>
     <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
       <div class="field-group">
         <label>Date (NDR logged)</label>
         <input type="date" id="d_date" value="${o.date||''}">
@@ -1170,6 +1181,28 @@ function closeDrawer(){
   document.getElementById('overlay').classList.remove('show');
   activeDrawerOrder = null;
 }
+function showDrawerError(msg){
+  const el = document.getElementById('drawerError');
+  if(el){
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  } else {
+    // Drawer isn't open for some reason — fall back to a toast so it's still seen.
+    showToast(msg, 'error');
+  }
+}
+/* Toasts replace window.alert() for anything triggered from a save/action —
+   alert()/confirm()/prompt() can be unreliable or invisible in installed
+   PWA / in-app-browser contexts on some phones, which was hiding real errors. */
+function showToast(message, type){
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' '+type : '');
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(()=>el.remove(), 300); }, type==='error' ? 6000 : 3000);
+}
 function logAttemptToday(){
   const todayISO = TODAY.toISOString().slice(0,10);
   ['d_a1','d_a2','d_a3'].some(id=>{
@@ -1179,36 +1212,46 @@ function logAttemptToday(){
   });
 }
 function saveDrawer(){
-  const o = orders.find(x=>x.id===activeDrawerOrder);
-  if(!o) return;
-  const isNewEntry = activeDrawerOrder === '__new__';
+  // Everything below is wrapped in try/catch on purpose: if ANYTHING throws
+  // here (a full localStorage, a missing field, whatever), you get a visible
+  // red message in the drawer instead of the panel just silently sitting
+  // there doing nothing with no explanation.
+  try {
+    const o = orders.find(x=>x.id===activeDrawerOrder);
+    if(!o) return;
+    const isNewEntry = activeDrawerOrder === '__new__';
 
-  if(isNewEntry){
-    const idVal = document.getElementById('d_id').value.trim();
-    if(!idVal){ alert('Please enter an Order ID before saving.'); return; }
-    // First line of defense: check against what this device already knows about.
-    if(orders.some(x=>x.id===idVal && x !== o)){ alert('Order ID '+idVal+' already exists.'); return; }
-    o.id = idVal;
-    o.awb = document.getElementById('d_awb').value.trim();
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      // First line of defense: check against what this device already knows about.
+      if(orders.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already exists. Open the existing order instead of creating a new one.'); return; }
+      o.id = idVal;
+      o.awb = document.getElementById('d_awb').value.trim();
+    }
+
+    o.date = document.getElementById('d_date').value;
+    o.reason = document.getElementById('d_reason').value;
+    o.priority = document.getElementById('d_priority').value;
+    o.payment = document.getElementById('d_payment').value;
+    o.a1 = document.getElementById('d_a1').value;
+    o.a2 = document.getElementById('d_a2').value;
+    o.a3 = document.getElementById('d_a3').value;
+    o.feedback = document.getElementById('d_feedback').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.wa = document.getElementById('d_wa').checked;
+    o.status = document.getElementById('d_status').value;
+    o.agent = document.getElementById('d_agent').value;
+
+    queueChange(o, isNewEntry);
+    saveOrdersCache();
+    closeDrawer();
+    renderAll();
+    showToast(isNewEntry ? 'Order saved — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
   }
-
-  o.date = document.getElementById('d_date').value;
-  o.reason = document.getElementById('d_reason').value;
-  o.priority = document.getElementById('d_priority').value;
-  o.payment = document.getElementById('d_payment').value;
-  o.a1 = document.getElementById('d_a1').value;
-  o.a2 = document.getElementById('d_a2').value;
-  o.a3 = document.getElementById('d_a3').value;
-  o.feedback = document.getElementById('d_feedback').value;
-  o.phone = document.getElementById('d_phone').value;
-  o.wa = document.getElementById('d_wa').checked;
-  o.status = document.getElementById('d_status').value;
-  o.agent = document.getElementById('d_agent').value;
-
-  queueChange(o, isNewEntry);
-  saveOrdersCache();
-  closeDrawer();
-  renderAll();
 }
 
 /* ---------------- new entry ---------------- */
@@ -1231,7 +1274,7 @@ function quickWhatsApp(id){
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
-    alert('No phone number on file for '+o.id+' yet.\n\nOpen the order and add a phone number to enable one-click WhatsApp.');
+    showToast('No phone number on file for '+o.id+' yet — open the order and add one to enable one-click WhatsApp.', 'error');
   }
 }
 
@@ -1287,8 +1330,8 @@ function bindEvents(){
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
   window.addEventListener('online', ()=>{ attemptSync(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
-  setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 10000);
-  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 30000);
+  setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
+  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
 /* ---------------- init ---------------- */
