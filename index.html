@@ -26,16 +26,22 @@
 
   .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
 
-  /* ---------- Update available banner ---------- */
-  .update-banner{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--slate);color:#fff;padding:10px 16px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap;}
+  /* ---------- Top banners (update available / sync problem) ---------- */
+  .banner-stack{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;flex-direction:column;}
+  .app{padding-top:var(--banner-offset,0px);}
+  .login-gate{padding-top:var(--banner-offset,0px);}
+
+  .update-banner{background:var(--slate);color:#fff;padding:10px 16px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap;}
   .update-banner .pip{width:7px;height:7px;border-radius:50%;background:#7fd99a;box-shadow:0 0 0 3px rgba(127,217,154,.25);flex-shrink:0;}
   .update-banner button{padding:6px 12px;font-size:12.5px;}
   .update-banner a{cursor:pointer;color:rgba(255,255,255,.85);font-size:12.5px;text-decoration:underline;}
-  body.has-update-banner .app{padding-top:44px;}
-  body.has-update-banner .rail{top:44px;height:calc(100vh - 44px);}
-  body.has-update-banner .login-gate{padding-top:44px;}
 
-  .rail{background:var(--rose);color:#fceff1;display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:sticky;top:0;height:100vh;}
+  .sync-problem-banner{background:var(--red);color:#fff;padding:10px 16px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap;}
+  .sync-problem-banner .pip{width:7px;height:7px;border-radius:50%;background:#fff;flex-shrink:0;}
+  .sync-problem-banner button{padding:6px 12px;font-size:12.5px;background:#fff;color:var(--red);border:none;border-radius:8px;font-weight:700;cursor:pointer;}
+  .sync-problem-banner button:hover{background:#fce9e8;}
+
+  .rail{background:var(--rose);color:#fceff1;display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:sticky;top:var(--banner-offset,0px);height:calc(100vh - var(--banner-offset,0px));}
   .rail .brand-mark{width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Italiana',serif;font-weight:400;font-size:16px;margin-bottom:22px;}
   .rail-item{width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;letter-spacing:.03em;cursor:pointer;color:rgba(255,255,255,.72);position:relative;}
   .rail-item svg{width:19px;height:19px;}
@@ -226,12 +232,19 @@
 </head>
 <body>
 
-<!-- UPDATE AVAILABLE BANNER -->
-<div class="update-banner" id="updateBanner">
-  <span class="pip"></span>
-  <span>A new version of the app is available.</span>
-  <button class="btn btn-primary" onclick="applyUpdate()">Update app</button>
-  <a onclick="dismissUpdateBanner()">Not now</a>
+<!-- TOP BANNERS -->
+<div class="banner-stack" id="bannerStack">
+  <div class="update-banner" id="updateBanner">
+    <span class="pip"></span>
+    <span>A new version of the app is available.</span>
+    <button class="btn btn-primary" onclick="applyUpdate()">Update app</button>
+    <a onclick="dismissUpdateBanner()">Not now</a>
+  </div>
+  <div class="sync-problem-banner" id="syncProblemBanner">
+    <span class="pip"></span>
+    <span id="syncProblemMsg">Some changes couldn't be saved yet — will keep retrying.</span>
+    <button onclick="attemptSync()">Retry now</button>
+  </div>
 </div>
 
 <!-- LOGIN GATE -->
@@ -899,6 +912,9 @@ function scheduleSyncSoon(delay){
   clearTimeout(syncTimer);
   syncTimer = setTimeout(attemptSync, delay || 1500);
 }
+let consecutiveSyncFailures = 0;
+const SYNC_FAILURE_BANNER_THRESHOLD = 2; // show the visible banner after this many failed tries in a row
+
 function attemptSync(){
   const ids = Object.keys(pendingChanges);
   if(!ids.length || syncInFlight || !authToken) return;
@@ -909,12 +925,31 @@ function attemptSync(){
     .then(res => {
       syncInFlight=false;
       if(!checkAuthResult(res)) return;
+      // A generic server-side failure looks like {ok:false, error:'...'} —
+      // distinct from a normal successful sync response, which always has
+      // applied/rejected arrays. Treat this the same as a network failure
+      // instead of silently doing nothing (this was the bug: entries would
+      // fail to save with no visible error).
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleSyncSoon(15000);
+        return;
+      }
       onSyncSuccess(res, batch);
     })
     .catch(err => { syncInFlight=false; onSyncFailure(err); });
 }
+function registerSyncFailure(message){
+  consecutiveSyncFailures++;
+  updateSyncBadge();
+  if(consecutiveSyncFailures >= SYNC_FAILURE_BANNER_THRESHOLD){
+    showSyncProblemBanner(message);
+  }
+}
 function onSyncSuccess(res, sentBatch){
-  if(!res){ scheduleSyncSoon(15000); return; }
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
   (res.applied||[]).forEach(orderId=>{
     const cur = pendingChanges[orderId];
     const sent = sentBatch.find(b=>b.orderId===orderId);
@@ -946,8 +981,25 @@ function onSyncSuccess(res, sentBatch){
 }
 function onSyncFailure(err){
   console.warn('NDR sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
   updateSyncBadge();
   scheduleSyncSoon(15000);
+}
+function showSyncProblemBanner(message){
+  const el = document.getElementById('syncProblemBanner');
+  const pendingCount = Object.keys(pendingChanges).length;
+  document.getElementById('syncProblemMsg').textContent =
+    `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
+  el.style.display = 'flex';
+  updateBannerOffsets();
+}
+function hideSyncProblemBanner(){
+  document.getElementById('syncProblemBanner').style.display = 'none';
+  updateBannerOffsets();
+}
+function updateBannerOffsets(){
+  const stack = document.getElementById('bannerStack');
+  document.documentElement.style.setProperty('--banner-offset', stack.offsetHeight + 'px');
 }
 function pushSlaSetting(){
   if(!authToken) return;
@@ -1284,14 +1336,14 @@ function checkForUpdate(){
         const dismissed = sessionStorage.getItem('ndr_update_dismissed_tag');
         if(dismissed === tag) return;
         document.getElementById('updateBanner').style.display = 'flex';
-        document.body.classList.add('has-update-banner');
+        updateBannerOffsets();
       }
     })
     .catch(()=>{});
 }
 function dismissUpdateBanner(){
   document.getElementById('updateBanner').style.display = 'none';
-  document.body.classList.remove('has-update-banner');
+  updateBannerOffsets();
   if(latestUpdateTag) sessionStorage.setItem('ndr_update_dismissed_tag', latestUpdateTag);
 }
 function applyUpdate(){
