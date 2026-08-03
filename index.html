@@ -422,6 +422,7 @@
             <th>Date</th>
             <th>Order ID</th>
             <th>AWB</th>
+            <th>Courier</th>
             <th>NDR Reason</th>
             <th>Priority</th>
             <th>Agent</th>
@@ -807,6 +808,7 @@ function renderTable(){
       <td>${fmtDate(o.date)}</td>
       <td class="oid-cell">${escapeHtml(o.id)}${pendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
       <td class="awb-cell">${escapeHtml(o.awb)}</td>
+      <td>${escapeHtml(o.courier) || '<span style="color:#d3b9be">—</span>'}</td>
       <td>${escapeHtml(o.reason)}</td>
       <td><span class="prio-pill ${o.priority==='HIGH'?'high':'normal'}">${o.priority==='HIGH'?'🔴 HIGH':'NORMAL'}</span></td>
       <td>${o.agent && o.agent!=='Unassigned' ? escapeHtml(o.agent) : '<span style="color:var(--red);font-weight:700;">Unassigned</span>'}</td>
@@ -1131,6 +1133,14 @@ function openDrawer(order){
         <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
       </div>
       <div class="field-group">
+        <label>Courier</label>
+        <select id="d_courier">
+          <option value="" ${!o.courier?'selected':''}>—</option>
+          <option value="iCarry" ${o.courier==='iCarry'?'selected':''}>iCarry</option>
+          <option value="Delhivery" ${o.courier==='Delhivery'?'selected':''}>Delhivery</option>
+        </select>
+      </div>
+      <div class="field-group">
         <label>NDR Reason</label>
         <input id="d_reason" value="${escapeHtml(o.reason)}">
       </div>
@@ -1289,6 +1299,7 @@ function saveDrawer(){
     }
 
     o.date = document.getElementById('d_date').value;
+    o.courier = document.getElementById('d_courier').value;
     o.reason = document.getElementById('d_reason').value;
     o.priority = document.getElementById('d_priority').value;
     o.payment = document.getElementById('d_payment').value;
@@ -1314,7 +1325,7 @@ function saveDrawer(){
 
 /* ---------------- new entry ---------------- */
 function openNewEntry(){
-  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), awb:'', reason:'', priority:'HIGH', a1:'', a2:'', a3:'', feedback:'', wa:false, status:'PENDING', payment:'', phone:'', agent: currentUser.displayName || 'Unassigned'};
+  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), awb:'', courier:'', reason:'', priority:'HIGH', a1:'', a2:'', a3:'', feedback:'', wa:false, status:'PENDING', payment:'', phone:'', agent: currentUser.displayName || 'Unassigned'};
   activeDrawerOrder = '__new__';
   orders.push(blank);
   openDrawer(blank);
@@ -1348,8 +1359,8 @@ function quickWhatsApp(id){
 /* ---------------- export ---------------- */
 function exportCSV(){
   const data = applyFilters();
-  const headers = ['Date','Order ID','AWB','NDR Reason','Priority','Agent','Attempt 1','Attempt 2','Attempt 3','Feedback','WA Sent','Status'];
-  const rows = data.map(o=>[o.date,o.id,o.awb,o.reason,o.priority,o.agent||'Unassigned',o.a1,o.a2,o.a3,o.feedback,o.wa?'Yes':'No',o.status]);
+  const headers = ['Date','Order ID','AWB','Courier','NDR Reason','Priority','Agent','Attempt 1','Attempt 2','Attempt 3','Feedback','WA Sent','Status'];
+  const rows = data.map(o=>[o.date,o.id,o.awb,o.courier,o.reason,o.priority,o.agent||'Unassigned',o.a1,o.a2,o.a3,o.feedback,o.wa?'Yes':'No',o.status]);
   const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
