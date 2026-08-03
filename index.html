@@ -26,6 +26,15 @@
 
   .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
 
+  /* ---------- Update available banner ---------- */
+  .update-banner{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--slate);color:#fff;padding:10px 16px;font-size:13px;display:none;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap;}
+  .update-banner .pip{width:7px;height:7px;border-radius:50%;background:#7fd99a;box-shadow:0 0 0 3px rgba(127,217,154,.25);flex-shrink:0;}
+  .update-banner button{padding:6px 12px;font-size:12.5px;}
+  .update-banner a{cursor:pointer;color:rgba(255,255,255,.85);font-size:12.5px;text-decoration:underline;}
+  body.has-update-banner .app{padding-top:44px;}
+  body.has-update-banner .rail{top:44px;height:calc(100vh - 44px);}
+  body.has-update-banner .login-gate{padding-top:44px;}
+
   .rail{background:var(--rose);color:#fceff1;display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;position:sticky;top:0;height:100vh;}
   .rail .brand-mark{width:36px;height:36px;border:1.5px solid rgba(255,255,255,.75);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Italiana',serif;font-weight:400;font-size:16px;margin-bottom:22px;}
   .rail-item{width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;letter-spacing:.03em;cursor:pointer;color:rgba(255,255,255,.72);position:relative;}
@@ -216,6 +225,14 @@
 </style>
 </head>
 <body>
+
+<!-- UPDATE AVAILABLE BANNER -->
+<div class="update-banner" id="updateBanner">
+  <span class="pip"></span>
+  <span>A new version of the app is available.</span>
+  <button class="btn btn-primary" onclick="applyUpdate()">Update app</button>
+  <a onclick="dismissUpdateBanner()">Not now</a>
+</div>
 
 <!-- LOGIN GATE -->
 <div class="login-gate" id="loginGate" style="display:none;">
@@ -1244,6 +1261,60 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(err=>console.warn('Service worker registration failed:', err));
   });
 }
+
+/* ---------------- update-available banner ----------------
+   Whenever you push a new index.html to GitHub, this automatically
+   notices (no manual version numbers to maintain) and shows the top
+   banner. No action needed from you beyond the normal upload — this
+   just detects it and lets the team refresh with one click. */
+let baselineUpdateTag = null;
+let latestUpdateTag = null;
+function captureBaselineUpdateTag(){
+  fetch('./index.html', { cache:'no-store', method:'HEAD' })
+    .then(r=>{ baselineUpdateTag = r.headers.get('etag') || r.headers.get('last-modified') || null; })
+    .catch(()=>{});
+}
+function checkForUpdate(){
+  fetch('./index.html', { cache:'no-store', method:'HEAD' })
+    .then(r=>{
+      const tag = r.headers.get('etag') || r.headers.get('last-modified');
+      if(!tag) return;
+      latestUpdateTag = tag;
+      if(baselineUpdateTag && tag !== baselineUpdateTag){
+        const dismissed = sessionStorage.getItem('ndr_update_dismissed_tag');
+        if(dismissed === tag) return;
+        document.getElementById('updateBanner').style.display = 'flex';
+        document.body.classList.add('has-update-banner');
+      }
+    })
+    .catch(()=>{});
+}
+function dismissUpdateBanner(){
+  document.getElementById('updateBanner').style.display = 'none';
+  document.body.classList.remove('has-update-banner');
+  if(latestUpdateTag) sessionStorage.setItem('ndr_update_dismissed_tag', latestUpdateTag);
+}
+function applyUpdate(){
+  const finish = () => {
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations()
+        .then(regs => Promise.all(regs.map(r=>r.update())))
+        .catch(()=>{})
+        .finally(()=>location.reload());
+    } else {
+      location.reload();
+    }
+  };
+  if('caches' in window){
+    caches.keys().then(keys => Promise.all(keys.map(k=>caches.delete(k)))).finally(finish);
+  } else {
+    finish();
+  }
+}
+captureBaselineUpdateTag();
+setInterval(checkForUpdate, 60000);
+window.addEventListener('focus', checkForUpdate);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdate(); });
 </script>
 </body>
 </html>
