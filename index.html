@@ -306,11 +306,17 @@
   <!-- RAIL -->
   <nav class="rail">
     <div class="brand-mark">O</div>
-    <div class="rail-item active">
+    <div class="rail-item active" id="railNdr" onclick="switchModule('ndr')">
       <div class="dot"></div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
       NDR
       <span class="tag">NDR Tracker — live</span>
+    </div>
+    <div class="rail-item" id="railRto" onclick="switchModule('rto')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      RTO
+      <span class="tag">Prepaid RTO Reship Tracker — live</span>
     </div>
     <div class="rail-item disabled">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 2.6-6.3"/><path d="M3 5v5h5"/></svg>
@@ -321,11 +327,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
       Returns
       <span class="tag">Returns / Damage / Exchange — Phase 2</span>
-    </div>
-    <div class="rail-item disabled">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-      RTO/Lost
-      <span class="tag">RTO &amp; Lost Shipments — Phase 2</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -342,7 +343,7 @@
           <text x="2" y="32" font-family="'Italiana',serif" font-size="30" letter-spacing="2" fill="var(--rose)">ORNAZA</text>
           <path d="M14,38 Q85,30 135,39 T236,32" fill="none" stroke="var(--rose)" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
-        <h1>NDR Control Tower</h1>
+        <h1 id="pageTitle">NDR Control Tower</h1>
         <span class="user-chip" id="userChip"></span>
       </div>
       <div class="topbar-actions">
@@ -354,6 +355,8 @@
       </div>
     </div>
 
+    <!-- ================= NDR MODULE ================= -->
+    <div id="ndrView">
     <!-- STATS -->
     <div class="stats-row" id="statsRow"></div>
 
@@ -449,6 +452,99 @@
         No orders match these filters — try clearing search or filters.
       </div>
     </div>
+    </div>
+    <!-- ================= /NDR MODULE ================= -->
+
+    <!-- ================= PREPAID RTO MODULE ================= -->
+    <div id="rtoView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="rtoStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>⚠ Action needed — reship not yet arranged</h3>
+        <div class="sla-config">
+          <label for="rtoSlaDays">Flag prepaid RTOs not reshipped within</label>
+          <input type="number" id="rtoSlaDays" min="1" max="30" value="3">
+          <span>day(s) of being logged</span>
+        </div>
+        <span id="rtoAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="rtoAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>RTO reason breakdown</h3>
+        <div id="rtoReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What's slowing your reships</h3>
+        <div id="rtoInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- MONTH-WISE PERFORMANCE -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Month-wise performance</h3>
+      <div id="rtoMonthlyBreakdown"></div>
+    </div>
+
+    <!-- OWNER LEADERBOARD -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Reship performance by owner</h3>
+      <div id="rtoAgentLeaderboard"></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="rtoSearchInput" placeholder="Search Order ID, AWB or address…">
+      </div>
+      <div class="chip-group" id="rtoStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="PENDING">Pending reship</div>
+        <div class="chip" data-status="RESHIPPED">Reshipped</div>
+        <div class="chip" data-status="REFUNDED">Refunded</div>
+      </div>
+      <div class="chip-group" id="rtoPrioChips">
+        <div class="chip" data-prio="HIGH">⚠ Overdue only</div>
+      </div>
+      <select class="reason-filter" id="rtoMonthFilter"><option value="ALL">All months</option></select>
+      <select class="reason-filter" id="rtoReasonFilter"><option value="ALL">All RTO reasons</option></select>
+      <select class="reason-filter" id="rtoAgentFilter"><option value="ALL">All owners</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>Old AWB</th>
+            <th>RTO Reason</th>
+            <th>Address confirmed</th>
+            <th>Action taken</th>
+            <th>New Order ID</th>
+            <th>New AWB</th>
+            <th>Dept notified</th>
+            <th>Owner</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rtoTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="rtoEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No entries match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /PREPAID RTO MODULE ================= -->
   </main>
 </div>
 
@@ -482,6 +578,19 @@ let syncTimer = null;
 let filters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL', attempt:'ALL' };
 function attemptCount_(o){ return [o.a1,o.a2,o.a3].filter(Boolean).length; }
 let activeDrawerOrder = null;
+let activeDrawerModule = 'ndr'; // which module's "Save changes" logic + duplicate-ID check applies to the open drawer
+
+/* ---------------- Prepaid RTO module state ---------------- */
+let currentModule = 'ndr'; // 'ndr' | 'rto' — which view is on screen right now
+let rtoOrders = [];
+let reshipSlaDays = 3;
+let rtoPendingChanges = {};
+let rtoSyncInFlight = false;
+let rtoSyncTimer = null;
+let rtoFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function rtoActionLabel(a){
+  return {RESHIP:'↗ Reshipped',REFUND:'↺ Refunded',STORE_CREDIT:'🎟 Store credit',PENDING:'— Not decided'}[a] || '— Not decided';
+}
 
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
 function monthLabel(key){
@@ -501,6 +610,12 @@ function loadLocalCache(){
     if(s && s.SLA_DAYS){ slaAutoRtoDays = parseInt(s.SLA_DAYS,10) || 5; }
   }catch(e){}
   try{ pendingChanges = JSON.parse(localStorage.getItem('ndr_pending_changes')||'{}'); }catch(e){ pendingChanges = {}; }
+  try{ const ro = JSON.parse(localStorage.getItem('ndr_cache_rto_orders')||'[]'); rtoOrders = Array.isArray(ro) ? ro : []; }catch(e){ rtoOrders = []; }
+  try{ rtoPendingChanges = JSON.parse(localStorage.getItem('ndr_rto_pending_changes')||'{}'); }catch(e){ rtoPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.RESHIP_SLA_DAYS) reshipSlaDays = parseInt(s.RESHIP_SLA_DAYS,10) || 3;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -509,8 +624,10 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
+function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
+function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -836,6 +953,512 @@ function renderTable(){
     </tr>
   `).join('');
 }
+/* ============================================================================
+   PREPAID RTO RESHIP TRACKER — second module, same offline/sync patterns as
+   the NDR module above but its own data shape (old AWB vs. new AWB, address
+   confirmation, action taken, refund/reship) and its own Google Sheet tab.
+   ============================================================================ */
+function daysSinceLoggedRto_(o){
+  if(!o.date) return 0;
+  const d = parseD(o.date);
+  if(!d || isNaN(d.getTime())) return 0;
+  return Math.floor((TODAY - d)/(1000*60*60*24));
+}
+function daysOverdueRto_(o){ return daysSinceLoggedRto_(o) - reshipSlaDays; }
+
+function computeRtoStats(data){
+  const total = data.length;
+  const reshipped = data.filter(o=>o.status==='RESHIPPED').length;
+  const pending = data.filter(o=>o.status==='PENDING').length;
+  const refunded = data.filter(o=>o.status==='REFUNDED').length;
+  const decided = reshipped + refunded;
+  const rate = decided ? Math.round((reshipped/decided)*100) : 0;
+  return {total, reshipped, pending, refunded, rate};
+}
+function renderRtoStats(){
+  const s = computeRtoStats(rtoOrders);
+  document.getElementById('rtoStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Prepaid RTO</div><div class="value">${s.total}</div><div class="sub">in this batch</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">new order sent out</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">awaiting action</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Refunded ↺</div><div class="value">${s.refunded}</div><div class="sub">refund / store credit</div></div>
+    <div class="stat-card rate"><div class="label">Reship Rate</div><div class="value">${s.rate}%</div><div class="sub">reshipped ÷ (reshipped+refunded)</div></div>
+  `;
+}
+function renderRtoAlerts(){
+  const urgent = rtoOrders.filter(o=> o.status==='PENDING' && daysOverdueRto_(o) >= 0)
+                        .sort((a,b)=> daysOverdueRto_(b)-daysOverdueRto_(a));
+  document.getElementById('rtoAlertCount').textContent = urgent.length ? `${urgent.length} order${urgent.length>1?'s':''} at risk` : '';
+  const box = document.getElementById('rtoAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing overdue right now — every pending prepaid RTO is still within the ${reshipSlaDays}-day window.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const over = daysOverdueRto_(o);
+    const deadlineText = over === 0 ? 'Due today — arrange reship or refund' : `${over} day${over===1?'':'s'} overdue for reship`;
+    return `
+    <div class="alert-card">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${escapeHtml(o.reason)} · ${o.oldAwb ? escapeHtml(o.oldAwb) : 'no old AWB on file'}</div>
+      <div class="stale">${deadlineText}</div>
+      <div style="font-size:11px;margin-top:2px;${(!o.agent||o.agent==='Unassigned')?'color:var(--red);font-weight:700;':'color:var(--slate-soft);'}">${(!o.agent||o.agent==='Unassigned')?'⚠ No owner assigned':'Owner: '+escapeHtml(o.agent)}</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openRtoDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppRto('${escapeHtml(o.id)}')">WhatsApp</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeRtoReasonBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.reason || 'Unspecified';
+    if(!map[r]) map[r] = {reason:r, count:0, reshipped:0, refunded:0, pending:0};
+    map[r].count++;
+    if(o.status==='RESHIPPED') map[r].reshipped++;
+    if(o.status==='REFUNDED') map[r].refunded++;
+    if(o.status==='PENDING') map[r].pending++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderRtoReasonChart(){
+  const breakdown = computeRtoReasonBreakdown(rtoOrders);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('rtoReasonChart').innerHTML = breakdown.map(b=>{
+    const refundRate = (b.reshipped+b.refunded) ? Math.round((b.refunded/(b.reshipped+b.refunded))*100) : 0;
+    const isLeak = refundRate >= 50 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${escapeHtml(b.reason)}">${escapeHtml(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${refundRate}% refunded</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const leaks = breakdown.filter(b=>{
+    const refundRate = (b.reshipped+b.refunded) ? (b.refunded/(b.reshipped+b.refunded)) : 0;
+    return refundRate >= 0.5 && b.count >= 2;
+  }).slice(0,3);
+  const topVolume = breakdown[0];
+  let callouts = '';
+  if(topVolume){
+    callouts += `<div class="callout"><b>${escapeHtml(topVolume.reason)}</b> is your highest-volume RTO reason (${topVolume.count} orders) hitting prepaid orders. Worth a standard address-confirmation script before dispatch.</div>`;
+  }
+  leaks.forEach(l=>{
+    const refundRate = Math.round((l.refunded/(l.reshipped+l.refunded))*100);
+    callouts += `<div class="callout"><b>${escapeHtml(l.reason)}</b> ends in a refund ${refundRate}% of the time instead of a reship — biggest leak point. Worth calling the customer before writing it off.</div>`;
+  });
+  if(!callouts) callouts = `<div class="callout">No major leak points in this batch — reship rate is fairly even across reasons.</div>`;
+  document.getElementById('rtoInsightCallouts').innerHTML = callouts;
+}
+function computeRtoMonthlyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = monthKey(o.date) || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, reshipped:0, pending:0, refunded:0};
+    map[k].total++;
+    if(o.status==='RESHIPPED') map[k].reshipped++;
+    if(o.status==='PENDING') map[k].pending++;
+    if(o.status==='REFUNDED') map[k].refunded++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderRtoMonthlyBreakdown(){
+  const months = computeRtoMonthlyBreakdown(rtoOrders);
+  let prevRate = null;
+  const rows = months.map(m=>{
+    const decided = m.reshipped + m.refunded;
+    const rate = decided ? Math.round((m.reshipped/decided)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=45?'':rate>=25?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':monthLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.reshipped} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div style="color:var(--red)">${m.refunded} ↺</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('rtoMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Month</div><div>Total</div><div>Reshipped</div><div>Pending</div><div>Refunded</div><div>Reship rate</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated entries yet.</div>'}
+  `;
+}
+function computeRtoAgentLeaderboard(data){
+  const map = {};
+  data.forEach(o=>{
+    const a = o.agent || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0, reshipped:0, refunded:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='RESHIPPED') map[a].reshipped++;
+    if(o.status==='REFUNDED') map[a].refunded++;
+    if(o.status==='PENDING') map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    if(a.agent==='Unassigned') return 1;
+    if(b.agent==='Unassigned') return -1;
+    const rateA = (a.reshipped+a.refunded) ? a.reshipped/(a.reshipped+a.refunded) : 0;
+    const rateB = (b.reshipped+b.refunded) ? b.reshipped/(b.reshipped+b.refunded) : 0;
+    return rateB - rateA;
+  });
+}
+function renderRtoAgentLeaderboard(){
+  const lb = computeRtoAgentLeaderboard(rtoOrders);
+  const rows = lb.map((a,i)=>{
+    const decided = a.reshipped + a.refunded;
+    const rate = decided ? Math.round((a.reshipped/decided)*100) : null;
+    const barClass = rate===null ? '' : rate>=45 ? '' : rate>=25 ? 'low' : 'crit';
+    const isTop = i===0 && a.agent!=='Unassigned' && rate!==null;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name ${a.agent==='Unassigned'?'unassigned':''}">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.reshipped} ✅</div>
+        <div style="color:var(--red)">${a.refunded} ↺</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('rtoAgentLeaderboard').innerHTML = `
+    <div class="lb-grid head"><div>Owner</div><div>Assigned</div><div>Reshipped</div><div>Refunded</div><div>Reship rate</div><div></div></div>
+    ${rows}
+  `;
+}
+function applyRtoFilters(){
+  return rtoOrders.filter(o=>{
+    if(rtoFilters.status!=='ALL' && o.status!==rtoFilters.status) return false;
+    if(rtoFilters.priority==='HIGH' && !(o.status==='PENDING' && daysOverdueRto_(o)>=0)) return false;
+    if(rtoFilters.reason!=='ALL' && o.reason!==rtoFilters.reason) return false;
+    if(rtoFilters.agent!=='ALL' && (o.agent||'Unassigned')!==rtoFilters.agent) return false;
+    if(rtoFilters.month!=='ALL' && monthKey(o.date)!==rtoFilters.month) return false;
+    if(rtoFilters.search){
+      const s = rtoFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.oldAwb} ${o.newAwb} ${o.address}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderRtoReasonFilterOptions(){
+  const sel = document.getElementById('rtoReasonFilter');
+  const reasons = [...new Set(rtoOrders.map(o=>o.reason).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All RTO reasons</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  sel.value = rtoFilters.reason;
+
+  const agentSel = document.getElementById('rtoAgentFilter');
+  const agentsInData = [...new Set(rtoOrders.map(o=>o.agent||'Unassigned'))].sort();
+  agentSel.innerHTML = '<option value="ALL">All owners</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = rtoFilters.agent;
+
+  const monthSel = document.getElementById('rtoMonthFilter');
+  const monthsInData = [...new Set(rtoOrders.map(o=>monthKey(o.date)).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All months</option>' + monthsInData.map(k=>`<option value="${k}">${monthLabel(k)}</option>`).join('');
+  monthSel.value = rtoFilters.month;
+}
+function rtoStatusStamp(status){
+  if(status==='RESHIPPED') return `<span class="stamp delivered">✓ RESHIPPED</span>`;
+  if(status==='REFUNDED') return `<span class="stamp rto">↺ REFUNDED</span>`;
+  return `<span class="stamp pending">↻ PENDING</span>`;
+}
+function renderRtoTable(){
+  const data = applyRtoFilters();
+  const body = document.getElementById('rtoTableBody');
+  document.getElementById('rtoEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>`
+    <tr onclick="openRtoDrawerById('${escapeHtml(o.id)}')">
+      <td>${fmtDate(o.date)}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${rtoPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.oldAwb) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${escapeHtml(o.reason)}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.address)}">${escapeHtml(o.address) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${rtoActionLabel(o.actionTaken)}</td>
+      <td class="oid-cell">${escapeHtml(o.newOrderId) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="awb-cell">${escapeHtml(o.newAwb) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="wa-pip ${o.deptNotified?'':'no'}">${o.deptNotified ? '✓ Sent' : '—'}</td>
+      <td>${o.agent && o.agent!=='Unassigned' ? escapeHtml(o.agent) : '<span style="color:var(--red);font-weight:700;">Unassigned</span>'}</td>
+      <td>${rtoStatusStamp(o.status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="WhatsApp (confirm address)" onclick="quickWhatsAppRto('${escapeHtml(o.id)}')">💬</div>
+          ${o.trackingLink ? `<div class="icon-btn" title="Track shipment" onclick="window.open('${escapeHtml(o.trackingLink)}','_blank')">🔗</div>` : ''}
+          <div class="icon-btn" title="Open" onclick="openRtoDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+function renderAllRto(){
+  renderRtoStats();
+  renderRtoAlerts();
+  renderRtoReasonChart();
+  renderRtoMonthlyBreakdown();
+  renderRtoAgentLeaderboard();
+  renderRtoReasonFilterOptions();
+  renderRtoTable();
+  updateSyncBadge();
+}
+
+/* ---------------- module switching (rail nav) ---------------- */
+function switchModule(module){
+  currentModule = module;
+  const isRto = module === 'rto';
+  document.getElementById('ndrView').style.display = isRto ? 'none' : '';
+  document.getElementById('rtoView').style.display = isRto ? '' : 'none';
+  document.getElementById('railNdr').classList.toggle('active', !isRto);
+  document.getElementById('railRto').classList.toggle('active', isRto);
+  document.getElementById('pageTitle').textContent = isRto ? 'Prepaid RTO Reship Tracker' : 'NDR Control Tower';
+  document.getElementById('newBtn').textContent = isRto ? '+ New RTO Entry' : '+ New NDR Entry';
+  if(isRto) renderAllRto(); else renderAll();
+}
+
+/* ---------------- Prepaid RTO drawer ---------------- */
+function openRtoDrawerById(id){
+  const o = rtoOrders.find(x=>x.id===id);
+  if(o) openRtoDrawer(o);
+}
+function openRtoDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'rto';
+  const o = order;
+  const agentOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.agent===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">Old AWB ${escapeHtml(o.oldAwb) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+      <div class="field-group">
+        <label>Date (RTO logged)</label>
+        <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
+      </div>
+      <div class="field-group">
+        <label>RTO Reason</label>
+        <input id="d_reason" value="${escapeHtml(o.reason)}">
+      </div>
+      <div class="field-group">
+        <label>Owner</label>
+        <select id="d_agent">
+          <option value="Unassigned" ${(!o.agent||o.agent==='Unassigned')?'selected':''}>Unassigned</option>
+          ${agentOptions}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Confirmed / updated address</label>
+        <textarea id="d_address" placeholder="Confirm with customer before reshipping">${escapeHtml(o.address)}</textarea>
+      </div>
+      <div class="field-group">
+        <label>Phone (for WhatsApp deep-link)</label>
+        <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)||''}">
+      </div>
+      <div class="field-group">
+        <label>Action taken</label>
+        <select id="d_actionTaken">
+          <option value="PENDING" ${o.actionTaken==='PENDING'?'selected':''}>Not decided yet</option>
+          <option value="RESHIP" ${o.actionTaken==='RESHIP'?'selected':''}>↗ Reship</option>
+          <option value="REFUND" ${o.actionTaken==='REFUND'?'selected':''}>↺ Refund</option>
+          <option value="STORE_CREDIT" ${o.actionTaken==='STORE_CREDIT'?'selected':''}>🎟 Store credit</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>New Order ID</label>
+        <input id="d_newOrderId" value="${escapeHtml(o.newOrderId)}">
+      </div>
+      <div class="field-group">
+        <label>New AWB</label>
+        <input id="d_newAwb" value="${escapeHtml(o.newAwb)}">
+      </div>
+      <div class="field-group">
+        <label>Tracking link</label>
+        <input id="d_trackingLink" placeholder="https://…" value="${escapeHtml(o.trackingLink)}">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="d_deptNotified" ${o.deptNotified?'checked':''}> Warehouse / dispatch department notified
+      </div>
+      <div class="field-group">
+        <label>Status</label>
+        <select id="d_status">
+          <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
+          <option value="RESHIPPED" ${o.status==='RESHIPPED'?'selected':''}>✅ Reshipped</option>
+          <option value="REFUNDED" ${o.status==='REFUNDED'?'selected':''}>↺ Refunded</option>
+        </select>
+      </div>
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveRtoDrawer()">Save changes</button>
+        <button class="btn" onclick="quickWhatsAppRto('${escapeHtml(o.id)}')">💬 Confirm address on WhatsApp</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the Prepaid RTO sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function saveRtoDrawer(){
+  try {
+    const o = rtoOrders.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(rtoOrders.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already exists in the Prepaid RTO tracker. Open the existing entry instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    o.date = document.getElementById('d_date').value;
+    o.reason = document.getElementById('d_reason').value;
+    o.agent = document.getElementById('d_agent').value;
+    o.address = document.getElementById('d_address').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.actionTaken = document.getElementById('d_actionTaken').value;
+    o.newOrderId = document.getElementById('d_newOrderId').value;
+    o.newAwb = document.getElementById('d_newAwb').value;
+    o.trackingLink = document.getElementById('d_trackingLink').value;
+    o.deptNotified = document.getElementById('d_deptNotified').checked;
+    o.status = document.getElementById('d_status').value;
+
+    queueRtoChange(o, isNewEntry);
+    saveRtoOrdersCache();
+    closeDrawer();
+    renderAllRto();
+    showToast(isNewEntry ? 'Entry saved — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveRtoDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  }
+}
+function openNewRtoEntry(){
+  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), oldAwb:'', reason:'', address:'', actionTaken:'PENDING', newOrderId:'', newAwb:'', trackingLink:'', deptNotified:false, agent: currentUser.displayName || 'Unassigned', status:'PENDING', phone:''};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'rto';
+  rtoOrders.push(blank);
+  openRtoDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New Prepaid RTO entry';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID + Old AWB below';
+  const reasonField = document.getElementById('d_reason');
+  reasonField.insertAdjacentHTML('beforebegin', '<label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID &amp; Old AWB</label><div style="display:flex;gap:8px;margin-bottom:16px;"><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"><input id="d_oldAwb" placeholder="Old AWB (if any)" autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+
+  const d_idField = document.getElementById('d_id');
+  if(d_idField) d_idField.focus();
+}
+function quickWhatsAppRto(id){
+  const o = rtoOrders.find(x=>x.id===id);
+  if(!o) return;
+  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id}. It was returned to us (${o.reason}). Could you please confirm your delivery address so we can resend it right away?`);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.id+' yet — open the order and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function exportRtoCSV(){
+  const data = applyRtoFilters();
+  const headers = ['Date','Order ID','Old AWB','RTO Reason','Address','Action Taken','New Order ID','New AWB','Tracking Link','Dept Notified','Owner','Status'];
+  const rows = data.map(o=>[o.date,o.id,o.oldAwb,o.reason,o.address,rtoActionLabel(o.actionTaken),o.newOrderId,o.newAwb,o.trackingLink,o.deptNotified?'Yes':'No',o.agent||'Unassigned',o.status]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'prepaid-rto-export.csv';
+  a.click();
+}
+
+/* ---------------- Prepaid RTO offline sync ---------------- */
+function queueRtoChange(order, isNew){
+  const wasNew = rtoPendingChanges[order.id] && rtoPendingChanges[order.id].isNew;
+  rtoPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveRtoPendingChanges();
+  updateSyncBadge();
+  scheduleRtoSyncSoon(400);
+}
+function scheduleRtoSyncSoon(delay){
+  clearTimeout(rtoSyncTimer);
+  rtoSyncTimer = setTimeout(attemptSyncRto, delay || 1500);
+}
+function attemptSyncRto(){
+  const ids = Object.keys(rtoPendingChanges);
+  if(!ids.length || rtoSyncInFlight || !authToken) return;
+  rtoSyncInFlight = true;
+  const batch = ids.map(id => rtoPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncRto', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      rtoSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleRtoSyncSoon(15000);
+        return;
+      }
+      onRtoSyncSuccess(res, batch);
+    })
+    .catch(err => { rtoSyncInFlight=false; onRtoSyncFailure(err); });
+}
+function onRtoSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleRtoSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = rtoPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete rtoPendingChanges[orderId];
+  });
+  (res.rejected||[]).forEach(r=>{
+    if(rtoPendingChanges[r.orderId]) delete rtoPendingChanges[r.orderId];
+    if(r.duplicate){
+      rtoOrders = rtoOrders.filter(o=>o.id!==r.orderId);
+    }
+    console.warn('RTO sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = rtoOrders.findIndex(x=>x.id===o.id);
+    if(idx>-1) rtoOrders[idx] = Object.assign({}, rtoOrders[idx], o);
+    else rtoOrders.push(o);
+  });
+  saveRtoPendingChanges();
+  saveRtoOrdersCache();
+  lastSyncTime = new Date();
+  renderAllRto();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(Object.keys(rtoPendingChanges).length) scheduleRtoSyncSoon(4000);
+}
+function onRtoSyncFailure(err){
+  console.warn('RTO sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleRtoSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -844,7 +1467,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -914,17 +1537,38 @@ function onBootstrapSuccess(res){
     merged.push(inProgressDraft);
   }
   orders = merged;
+
+  // Same merge + in-progress-draft protection for the Prepaid RTO module.
+  const serverRtoOrders = res.rtoOrders || [];
+  const mergedRto = serverRtoOrders.map(so => rtoPendingChanges[so.id] ? Object.assign({}, so, rtoPendingChanges[so.id].payload) : so);
+  Object.keys(rtoPendingChanges).forEach(id=>{
+    if(!mergedRto.find(o=>o.id===id)) mergedRto.push(rtoPendingChanges[id].payload);
+  });
+  const inProgressRtoDraft = rtoOrders.find(o=>o.id==='__new__');
+  if(inProgressRtoDraft && !mergedRto.find(o=>o.id==='__new__')){
+    mergedRto.push(inProgressRtoDraft);
+  }
+  rtoOrders = mergedRto;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
     const slaInput = document.getElementById('slaDays');
     if(slaInput) slaInput.value = slaAutoRtoDays;
-    saveSettingsCache();
   }
+  if(res.settings && res.settings.RESHIP_SLA_DAYS){
+    reshipSlaDays = parseInt(res.settings.RESHIP_SLA_DAYS,10) || 3;
+    const rtoSlaInput = document.getElementById('rtoSlaDays');
+    if(rtoSlaInput) rtoSlaInput.value = reshipSlaDays;
+  }
+  saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
+  saveRtoOrdersCache();
   renderAll();
+  renderAllRto();
   if(Object.keys(pendingChanges).length) attemptSync();
+  if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
 }
 
 function queueChange(order, isNew){
@@ -1023,7 +1667,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -1036,6 +1680,12 @@ function hideSyncProblemBanner(){
 function updateBannerOffsets(){
   const stack = document.getElementById('bannerStack');
   document.documentElement.style.setProperty('--banner-offset', stack.offsetHeight + 'px');
+}
+function pushReshipSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'RESHIP_SLA_DAYS', value: reshipSlaDays })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
 }
 function pushSlaSetting(){
   if(!authToken) return;
@@ -1123,6 +1773,7 @@ function openDrawerById(id){
 }
 function openDrawer(order){
   activeDrawerOrder = order.id;
+  activeDrawerModule = 'ndr';
   const o = order;
   const agentOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.agent===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
   const auditLine = (o.updatedBy || o.createdBy) ?
@@ -1213,6 +1864,12 @@ function openDrawer(order){
   document.getElementById('overlay').classList.add('show');
 }
 function closeDrawer(){
+  // Cancel (or clicking outside) on a not-yet-saved "new entry" draft should
+  // drop it rather than leave a phantom blank row sitting in the list.
+  if(activeDrawerOrder==='__new__'){
+    if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
+    else orders = orders.filter(o=>o.id!=='__new__');
+  }
   document.getElementById('drawer').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   activeDrawerOrder = null;
@@ -1405,27 +2062,59 @@ function bindEvents(){
     renderAlerts();
     pushSlaSetting();
   });
-  document.getElementById('exportBtn').addEventListener('click', exportCSV);
-  document.getElementById('newBtn').addEventListener('click', openNewEntry);
+  document.getElementById('exportBtn').addEventListener('click', ()=>{ currentModule==='rto' ? exportRtoCSV() : exportCSV(); });
+  document.getElementById('newBtn').addEventListener('click', ()=>{ currentModule==='rto' ? openNewRtoEntry() : openNewEntry(); });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
+
+  // ---- Prepaid RTO toolbar ----
+  document.getElementById('rtoSearchInput').addEventListener('input', e=>{ rtoFilters.search = e.target.value; renderRtoTable(); });
+  document.getElementById('rtoStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#rtoStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    rtoFilters.status = chip.dataset.status;
+    renderRtoTable();
+  });
+  document.getElementById('rtoPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    rtoFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderRtoTable();
+  });
+  document.getElementById('rtoReasonFilter').addEventListener('change', e=>{ rtoFilters.reason = e.target.value; renderRtoTable(); });
+  document.getElementById('rtoAgentFilter').addEventListener('change', e=>{ rtoFilters.agent = e.target.value; renderRtoTable(); });
+  document.getElementById('rtoMonthFilter').addEventListener('change', e=>{ rtoFilters.month = e.target.value; renderRtoTable(); });
+  document.getElementById('rtoSlaDays').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    reshipSlaDays = (v && v > 0) ? v : 3;
+    saveSettingsCache();
+    renderRtoAlerts();
+    pushReshipSlaSetting();
+  });
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
-    if(activeDrawerOrder==='__new__') orders = orders.filter(o=>o.id!=='__new__');
+    if(activeDrawerOrder==='__new__'){
+      if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
+      else orders = orders.filter(o=>o.id!=='__new__');
+    }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
+  setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
 /* ---------------- init ---------------- */
 function startApp(){
   document.getElementById('slaDays').value = slaAutoRtoDays;
+  document.getElementById('rtoSlaDays').value = reshipSlaDays;
   renderAll();            // instant paint from cache — works even fully offline
+  renderAllRto();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
