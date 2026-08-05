@@ -1249,6 +1249,10 @@ function openRtoDrawer(order){
         <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
       </div>
       <div class="field-group">
+        <label>Old AWB</label>
+        <input id="d_oldAwb" value="${escapeHtml(o.oldAwb)}">
+      </div>
+      <div class="field-group">
         <label>RTO Reason</label>
         <input id="d_reason" value="${escapeHtml(o.reason)}">
       </div>
@@ -1327,6 +1331,7 @@ function saveRtoDrawer(){
     }
 
     o.date = document.getElementById('d_date').value;
+    o.oldAwb = document.getElementById('d_oldAwb').value.trim();
     o.reason = document.getElementById('d_reason').value;
     o.agent = document.getElementById('d_agent').value;
     o.address = document.getElementById('d_address').value;
@@ -1355,9 +1360,9 @@ function openNewRtoEntry(){
   rtoOrders.push(blank);
   openRtoDrawer(blank);
   document.getElementById('drawerTitle').textContent = 'New Prepaid RTO entry';
-  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID + Old AWB below';
-  const reasonField = document.getElementById('d_reason');
-  reasonField.insertAdjacentHTML('beforebegin', '<label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID &amp; Old AWB</label><div style="display:flex;gap:8px;margin-bottom:16px;"><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"><input id="d_oldAwb" placeholder="Old AWB (if any)" autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+  const dateField = document.getElementById('d_date');
+  dateField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
 
   const d_idField = document.getElementById('d_id');
   if(d_idField) d_idField.focus();
