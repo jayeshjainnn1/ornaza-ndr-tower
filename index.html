@@ -431,6 +431,7 @@
           <tr>
             <th>Date</th>
             <th>Order ID</th>
+            <th>Payment</th>
             <th>AWB</th>
             <th>Courier</th>
             <th>NDR Reason</th>
@@ -933,6 +934,7 @@ function renderTable(){
     <tr onclick="openDrawerById('${escapeHtml(o.id)}')">
       <td>${fmtDate(o.date)}</td>
       <td class="oid-cell">${escapeHtml(o.id)}${pendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td>${o.payment ? escapeHtml(o.payment) : '<span style="color:#d3b9be">—</span>'}</td>
       <td class="awb-cell">${escapeHtml(o.awb)}</td>
       <td>${escapeHtml(o.courier) || '<span style="color:#d3b9be">—</span>'}</td>
       <td>${escapeHtml(o.reason)}</td>
@@ -2030,8 +2032,8 @@ function quickWhatsApp(id){
 /* ---------------- export ---------------- */
 function exportCSV(){
   const data = applyFilters();
-  const headers = ['Date','Order ID','AWB','Courier','NDR Reason','Priority','Agent','Attempt 1','Attempt 2','Attempt 3','Feedback','WA Sent','Status'];
-  const rows = data.map(o=>[o.date,o.id,o.awb,o.courier,o.reason,o.priority,o.agent||'Unassigned',o.a1,o.a2,o.a3,o.feedback,o.wa?'Yes':'No',o.status]);
+  const headers = ['Date','Order ID','Payment','AWB','Courier','NDR Reason','Priority','Agent','Attempt 1','Attempt 2','Attempt 3','Feedback','WA Sent','Status'];
+  const rows = data.map(o=>[o.date,o.id,o.payment,o.awb,o.courier,o.reason,o.priority,o.agent||'Unassigned',o.a1,o.a2,o.a3,o.feedback,o.wa?'Yes':'No',o.status]);
   const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
