@@ -721,8 +721,7 @@ function computeStats(data){
   const delivered = data.filter(o=>o.status==='DELIVERED').length;
   const pending = data.filter(o=>o.status==='PENDING').length;
   const rto = data.filter(o=>o.status==='RTO').length;
-  const decided = delivered + rto;
-  const rate = decided ? Math.round((delivered/decided)*100) : 0;
+  const rate = total ? Math.round((delivered/total)*100) : 0;
   return {total, delivered, pending, rto, rate};
 }
 function computeReasonBreakdown(data){
@@ -776,7 +775,7 @@ function renderStats(){
     <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Delivered ✅</div><div class="value">${s.delivered}</div><div class="sub">rescued deliveries</div></div>
     <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">still being worked</div></div>
     <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">RTO ❌</div><div class="value">${s.rto}</div><div class="sub">returned to origin</div></div>
-    <div class="stat-card rate"><div class="label">Resolution Rate</div><div class="value">${s.rate}%</div><div class="sub">delivered ÷ (delivered+RTO)</div></div>
+    <div class="stat-card rate"><div class="label">Delivered %</div><div class="value">${s.rate}%</div><div class="sub">delivered ÷ total</div></div>
   `;
 }
 function renderAlerts(){
