@@ -761,8 +761,8 @@ function computeAgentLeaderboard(data){
   return Object.values(map).sort((a,b)=>{
     if(a.agent==='Unassigned') return 1;
     if(b.agent==='Unassigned') return -1;
-    const rateA = (a.delivered+a.rto) ? a.delivered/(a.delivered+a.rto) : 0;
-    const rateB = (b.delivered+b.rto) ? b.delivered/(b.delivered+b.rto) : 0;
+    const rateA = a.assigned ? a.delivered/a.assigned : 0;
+    const rateB = b.assigned ? b.delivered/b.assigned : 0;
     return rateB - rateA;
   });
 }
@@ -869,8 +869,7 @@ function renderMonthlyBreakdown(){
 function renderAgentLeaderboard(){
   const lb = computeAgentLeaderboard(orders);
   const rows = lb.map((a,i)=>{
-    const decided = a.delivered + a.rto;
-    const rate = decided ? Math.round((a.delivered/decided)*100) : null;
+    const rate = a.assigned ? Math.round((a.delivered/a.assigned)*100) : null;
     const barClass = rate===null ? '' : rate>=45 ? '' : rate>=25 ? 'low' : 'crit';
     const isTop = i===0 && a.agent!=='Unassigned' && rate!==null;
     return `
@@ -884,7 +883,7 @@ function renderAgentLeaderboard(){
       </div>`;
   }).join('');
   document.getElementById('agentLeaderboard').innerHTML = `
-    <div class="lb-grid head"><div>Agent</div><div>Assigned</div><div>Delivered</div><div>RTO</div><div>Resolution rate</div><div></div></div>
+    <div class="lb-grid head"><div>Agent</div><div>Assigned</div><div>Delivered</div><div>RTO</div><div>Delivered rate</div><div></div></div>
     ${rows}
   `;
 }
