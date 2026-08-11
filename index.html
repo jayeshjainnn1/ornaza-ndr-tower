@@ -398,6 +398,12 @@
       <div id="agentLeaderboard"></div>
     </div>
 
+    <!-- PAYMENT MODE PERFORMANCE -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Payment mode performance</h3>
+      <div id="paymentBreakdown"></div>
+    </div>
+
     <!-- TOOLBAR -->
     <div class="table-toolbar">
       <div class="search-box">
@@ -885,6 +891,42 @@ function renderAgentLeaderboard(){
   document.getElementById('agentLeaderboard').innerHTML = `
     <div class="lb-grid head"><div>Agent</div><div>Assigned</div><div>Delivered</div><div>RTO</div><div>Delivered rate</div><div></div></div>
     ${rows}
+  `;
+}
+/* Breaks down orders by Payment mode (Prepaid vs COD) so you can see at a
+   glance how many of each got delivered vs. ended up RTO — prepaid orders
+   typically resolve very differently from COD, worth tracking separately. */
+function computePaymentBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const p = o.payment || 'Not set';
+    if(!map[p]) map[p] = {payment:p, assigned:0, delivered:0, rto:0, pending:0};
+    map[p].assigned++;
+    if(o.status==='DELIVERED') map[p].delivered++;
+    if(o.status==='RTO') map[p].rto++;
+    if(o.status==='PENDING') map[p].pending++;
+  });
+  const order = {Prepaid:0, COD:1, 'Not set':2};
+  return Object.values(map).sort((a,b)=> (order[a.payment]??3) - (order[b.payment]??3));
+}
+function renderPaymentBreakdown(){
+  const pb = computePaymentBreakdown(orders);
+  const rows = pb.map(p=>{
+    const rate = p.assigned ? Math.round((p.delivered/p.assigned)*100) : null;
+    const barClass = rate===null ? '' : rate>=45 ? '' : rate>=25 ? 'low' : 'crit';
+    return `
+      <div class="lb-grid">
+        <div class="lb-name ${p.payment==='Not set'?'unassigned':''}">${escapeHtml(p.payment)}</div>
+        <div>${p.assigned} total</div>
+        <div style="color:var(--green)">${p.delivered} ✅</div>
+        <div style="color:var(--red)">${p.rto} ❌</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('paymentBreakdown').innerHTML = `
+    <div class="lb-grid head"><div>Payment mode</div><div>Total</div><div>Delivered</div><div>RTO</div><div>Delivered rate</div><div></div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No orders yet.</div>'}
   `;
 }
 function applyFilters(){
@@ -1497,6 +1539,7 @@ function renderAll(){
   renderReasonChart();
   renderMonthlyBreakdown();
   renderAgentLeaderboard();
+  renderPaymentBreakdown();
   renderReasonFilterOptions();
   renderTable();
   updateSyncBadge();
