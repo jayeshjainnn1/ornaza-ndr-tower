@@ -189,6 +189,7 @@
   .drawer-actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
   .drawer-note{font-size:11.5px;color:var(--slate-soft);background:var(--paper);padding:8px 10px;border-radius:7px;margin-top:16px;line-height:1.5;}
   .drawer-error{background:var(--red-soft);color:var(--red);padding:9px 11px;border-radius:7px;font-size:12.5px;margin-bottom:16px;font-weight:600;line-height:1.4;}
+  .drawer-lock-note{background:var(--amber-soft);color:#8a6d1f;padding:9px 11px;border-radius:7px;font-size:12.5px;margin-bottom:16px;font-weight:600;line-height:1.4;}
 
   /* ---------- Toast (replaces unreliable alert() popups on installed/mobile apps) ---------- */
   .toast-stack{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
@@ -1269,6 +1270,29 @@ function openRtoDrawerById(id){
   const o = rtoOrders.find(x=>x.id===id);
   if(o) openRtoDrawer(o);
 }
+/* ---------------- edit lock (only the creator or an admin can edit an
+   existing entry — this is a UI convenience only; the real enforcement is
+   server-side in Code.gs, since a locked-out user could otherwise just call
+   the save function from the browser console). ---------------- */
+function applyDrawerLockIfNeeded(order){
+  if(order.id === '__new__') return; // always allowed to create
+  const isOwner = !order.createdBy || order.createdBy === currentUser.displayName;
+  const isAdmin = currentUser.role === 'admin';
+  if(isOwner || isAdmin) return; // editable, nothing to lock
+
+  const body = document.querySelector('#drawer .drawer-body');
+  if(!body) return;
+  body.querySelectorAll('input, select, textarea').forEach(el=>{ el.disabled = true; });
+  const saveBtn = body.querySelector('.drawer-actions .btn-primary');
+  if(saveBtn){
+    saveBtn.disabled = true;
+    saveBtn.title = 'Only ' + order.createdBy + ' or an admin can edit this entry.';
+  }
+  const lockNote = document.createElement('div');
+  lockNote.className = 'drawer-lock-note';
+  lockNote.textContent = '🔒 View only — this entry was created by ' + order.createdBy + '. Only they or an admin can make changes.';
+  body.insertBefore(lockNote, body.firstChild);
+}
 function openRtoDrawer(order){
   activeDrawerOrder = order.id;
   activeDrawerModule = 'rto';
@@ -1355,6 +1379,7 @@ function openRtoDrawer(order){
   `;
   document.getElementById('drawer').classList.add('show');
   document.getElementById('overlay').classList.add('show');
+  applyDrawerLockIfNeeded(o);
 }
 function saveRtoDrawer(){
   try {
@@ -1478,11 +1503,13 @@ function onRtoSyncSuccess(res, sentBatch){
     const sent = sentBatch.find(b=>b.orderId===orderId);
     if(cur && sent && cur.changeId===sent.changeId) delete rtoPendingChanges[orderId];
   });
+  let hadLockedRejection = false;
   (res.rejected||[]).forEach(r=>{
     if(rtoPendingChanges[r.orderId]) delete rtoPendingChanges[r.orderId];
     if(r.duplicate){
       rtoOrders = rtoOrders.filter(o=>o.id!==r.orderId);
     }
+    if(r.locked) hadLockedRejection = true;
     console.warn('RTO sync rejected for', r.orderId, '-', r.reason);
   });
   (res.orders||[]).forEach(o=>{
@@ -1497,6 +1524,10 @@ function onRtoSyncSuccess(res, sentBatch){
   if(res.rejected && res.rejected.length){
     showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
   }
+  // A locked rejection means this device's local copy of that entry has an
+  // edit sitting in it that the server refused — pull the real server state
+  // back down so the screen doesn't keep showing a change that never saved.
+  if(hadLockedRejection) bootstrapFromServer();
   if(Object.keys(rtoPendingChanges).length) scheduleRtoSyncSoon(4000);
 }
 function onRtoSyncFailure(err){
@@ -1683,6 +1714,7 @@ function onSyncSuccess(res, sentBatch){
     const sent = sentBatch.find(b=>b.orderId===orderId);
     if(cur && sent && cur.changeId===sent.changeId) delete pendingChanges[orderId];
   });
+  let hadLockedRejection = false;
   (res.rejected||[]).forEach(r=>{
     if(pendingChanges[r.orderId]) delete pendingChanges[r.orderId];
     if(r.duplicate){
@@ -1691,6 +1723,7 @@ function onSyncSuccess(res, sentBatch){
       // order (from whoever created it first) will show up on the next sync.
       orders = orders.filter(o=>o.id!==r.orderId);
     }
+    if(r.locked) hadLockedRejection = true;
     console.warn('NDR sync rejected for', r.orderId, '-', r.reason);
   });
   (res.orders||[]).forEach(o=>{
@@ -1705,6 +1738,10 @@ function onSyncSuccess(res, sentBatch){
   if(res.rejected && res.rejected.length){
     showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
   }
+  // A locked rejection means this device's local copy has an edit sitting in
+  // it that the server refused (someone else's order) — pull the real
+  // server state back down so the screen doesn't show a change that never saved.
+  if(hadLockedRejection) bootstrapFromServer();
   if(Object.keys(pendingChanges).length) scheduleSyncSoon(4000);
 }
 function onSyncFailure(err){
@@ -1910,6 +1947,7 @@ function openDrawer(order){
   `;
   document.getElementById('drawer').classList.add('show');
   document.getElementById('overlay').classList.add('show');
+  applyDrawerLockIfNeeded(o);
 }
 function closeDrawer(){
   // Cancel (or clicking outside) on a not-yet-saved "new entry" draft should
