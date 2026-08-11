@@ -1274,9 +1274,14 @@ function openRtoDrawerById(id){
    existing entry — this is a UI convenience only; the real enforcement is
    server-side in Code.gs, since a locked-out user could otherwise just call
    the save function from the browser console). ---------------- */
+function normName_(s){ return (s||'').toString().trim().toLowerCase(); }
 function applyDrawerLockIfNeeded(order){
   if(order.id === '__new__') return; // always allowed to create
-  const isOwner = !order.createdBy || order.createdBy === currentUser.displayName;
+  // Case/whitespace-insensitive compare — if an account gets removed and
+  // re-added, a display name typed slightly differently (extra space,
+  // different capitalization) shouldn't lock someone out of their own
+  // past entries. Matches the same comparison Code.gs uses server-side.
+  const isOwner = !order.createdBy || normName_(order.createdBy) === normName_(currentUser.displayName);
   const isAdmin = currentUser.role === 'admin';
   if(isOwner || isAdmin) return; // editable, nothing to lock
 
