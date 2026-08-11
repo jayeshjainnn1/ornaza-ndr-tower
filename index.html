@@ -324,10 +324,11 @@
       Rescue
       <span class="tag">Cancelled Order Rescue — Phase 2</span>
     </div>
-    <div class="rail-item disabled">
+    <div class="rail-item" id="railReturns" onclick="switchModule('returns')">
+      <div class="dot"></div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
       Returns
-      <span class="tag">Returns / Damage / Exchange — Phase 2</span>
+      <span class="tag">Return / Exchange / Damage Tracker — live</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -553,6 +554,96 @@
     </div>
     </div>
     <!-- ================= /PREPAID RTO MODULE ================= -->
+
+    <!-- ================= RETURN / EXCHANGE / DAMAGE MODULE ================= -->
+    <div id="returnsView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="redStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>⚠ Action needed — not yet initiated</h3>
+        <div class="sla-config">
+          <label for="redSlaDays">Flag cases not initiated within</label>
+          <input type="number" id="redSlaDays" min="1" max="30" value="2">
+          <span>day(s) of being logged</span>
+        </div>
+        <span id="redAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="redAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>Case type breakdown</h3>
+        <div id="redReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>Recurring SKU issues</h3>
+        <div id="redInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- MONTH-WISE PERFORMANCE -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Month-wise performance</h3>
+      <div id="redMonthlyBreakdown"></div>
+    </div>
+
+    <!-- OWNER LEADERBOARD -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Resolution performance by handler</h3>
+      <div id="redAgentLeaderboard"></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="redSearchInput" placeholder="Search Order ID, AWB, SKU or remark…">
+      </div>
+      <div class="chip-group" id="redStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="PENDING">Pending</div>
+        <div class="chip" data-status="RESOLVED">Resolved</div>
+      </div>
+      <div class="chip-group" id="redPrioChips">
+        <div class="chip" data-prio="HIGH">⚠ Not initiated only</div>
+      </div>
+      <select class="reason-filter" id="redMonthFilter"><option value="ALL">All months</option></select>
+      <select class="reason-filter" id="redReasonFilter"><option value="ALL">All types</option></select>
+      <select class="reason-filter" id="redAgentFilter"><option value="ALL">All handlers</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>AWB</th>
+            <th>Type</th>
+            <th>SKU</th>
+            <th>Remark</th>
+            <th>Initiated</th>
+            <th>New AWB</th>
+            <th>QC</th>
+            <th>Handler</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="redTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="redEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No cases match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /RETURN / EXCHANGE / DAMAGE MODULE ================= -->
   </main>
 </div>
 
@@ -600,6 +691,20 @@ function rtoActionLabel(a){
   return {RESHIP:'↗ Reshipped',REFUND:'↺ Refunded',STORE_CREDIT:'🎟 Store credit',PENDING:'— Not decided'}[a] || '— Not decided';
 }
 
+/* ---------------- Return / Exchange / Damage module state ---------------- */
+let redCases = [];
+let initiateSlaDays = 2;
+let redPendingChanges = {};
+let redSyncInFlight = false;
+let redSyncTimer = null;
+let redFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function typeLabel(t){
+  return {RETURN:'↩ Return',EXCHANGE:'⇄ Exchange',DAMAGE:'⚠ Damage',WRONG_ITEM:'📦 Wrong Item'}[t] || t;
+}
+function resolutionLabel(r){
+  return {PENDING:'— Not decided',REPLACEMENT_SENT:'↗ Replacement sent',CREDIT_ISSUED:'🎟 Credit issued',REFUNDED:'↺ Refunded'}[r] || '— Not decided';
+}
+
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
 function monthLabel(key){
   const [y,m] = key.split('-');
@@ -624,6 +729,12 @@ function loadLocalCache(){
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.RESHIP_SLA_DAYS) reshipSlaDays = parseInt(s.RESHIP_SLA_DAYS,10) || 3;
   }catch(e){}
+  try{ const rc = JSON.parse(localStorage.getItem('ndr_cache_red_cases')||'[]'); redCases = Array.isArray(rc) ? rc : []; }catch(e){ redCases = []; }
+  try{ redPendingChanges = JSON.parse(localStorage.getItem('ndr_red_pending_changes')||'{}'); }catch(e){ redPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.INITIATE_SLA_DAYS) initiateSlaDays = parseInt(s.INITIATE_SLA_DAYS,10) || 2;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -632,10 +743,12 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
+function saveRedCasesCache(){ localStorage.setItem('ndr_cache_red_cases', JSON.stringify(redCases)); }
+function saveRedPendingChanges(){ localStorage.setItem('ndr_red_pending_changes', JSON.stringify(redPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -1252,17 +1365,279 @@ function renderAllRto(){
   updateSyncBadge();
 }
 
+/* ============================================================================
+   RETURN / EXCHANGE / DAMAGE TRACKER — third module, same offline/sync
+   patterns as the NDR + Prepaid RTO modules above but its own data shape
+   (case type, SKU, remark, initiated/QC checkboxes, resolution) and its own
+   Google Sheet tab.
+   ============================================================================ */
+function daysSinceLoggedRed_(o){
+  if(!o.date) return 0;
+  const d = parseD(o.date);
+  if(!d || isNaN(d.getTime())) return 0;
+  return Math.floor((TODAY - d)/(1000*60*60*24));
+}
+function daysOverdueRed_(o){ return daysSinceLoggedRed_(o) - initiateSlaDays; }
+
+function computeRedStats(data){
+  const total = data.length;
+  const resolved = data.filter(o=>o.status==='RESOLVED').length;
+  const pending = data.filter(o=>o.status==='PENDING').length;
+  const qualityIssues = data.filter(o=>o.type==='DAMAGE' || o.type==='WRONG_ITEM').length;
+  const rate = total ? Math.round((resolved/total)*100) : 0;
+  return {total, resolved, pending, qualityIssues, rate};
+}
+function renderRedStats(){
+  const s = computeRedStats(redCases);
+  document.getElementById('redStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Cases</div><div class="value">${s.total}</div><div class="sub">in this batch</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Resolved ✅</div><div class="value">${s.resolved}</div><div class="sub">closed out</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">still being worked</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Quality Issues ⚠</div><div class="value">${s.qualityIssues}</div><div class="sub">damage + wrong item</div></div>
+    <div class="stat-card rate"><div class="label">Resolved %</div><div class="value">${s.rate}%</div><div class="sub">resolved ÷ total cases</div></div>
+  `;
+}
+function renderRedAlerts(){
+  const urgent = redCases.filter(o=> o.status==='PENDING' && !o.initiated && daysOverdueRed_(o) >= 0)
+                        .sort((a,b)=> daysOverdueRed_(b)-daysOverdueRed_(a));
+  document.getElementById('redAlertCount').textContent = urgent.length ? `${urgent.length} case${urgent.length>1?'s':''} at risk` : '';
+  const box = document.getElementById('redAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing overdue right now — every open case is still within the ${initiateSlaDays}-day window to initiate.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const over = daysOverdueRed_(o);
+    const deadlineText = over === 0 ? 'Due today — initiate return/replacement' : `${over} day${over===1?'':'s'} overdue to initiate`;
+    return `
+    <div class="alert-card">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${typeLabel(o.type)} · ${o.sku ? escapeHtml(o.sku) : (o.awb||'no AWB on file')}</div>
+      <div class="stale">${deadlineText}</div>
+      <div style="font-size:11px;margin-top:2px;${(!o.agent||o.agent==='Unassigned')?'color:var(--red);font-weight:700;':'color:var(--slate-soft);'}">${(!o.agent||o.agent==='Unassigned')?'⚠ No handler assigned':'Handler: '+escapeHtml(o.agent)}</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openRedDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppRed('${escapeHtml(o.id)}')">WhatsApp</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeRedTypeBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.type || 'Unspecified';
+    if(!map[r]) map[r] = {reason:r, count:0, resolved:0, pending:0};
+    map[r].count++;
+    if(o.status==='RESOLVED') map[r].resolved++;
+    if(o.status==='PENDING') map[r].pending++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function computeRedSkuIssues(data){
+  const map = {};
+  data.forEach(o=>{
+    if(o.type!=='DAMAGE' && o.type!=='WRONG_ITEM') return;
+    (o.sku||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(sku=>{
+      if(!map[sku]) map[sku] = {sku, count:0, orders:[]};
+      map[sku].count++;
+      map[sku].orders.push(o.id);
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderRedReasonChart(){
+  const breakdown = computeRedTypeBreakdown(redCases);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('redReasonChart').innerHTML = breakdown.map(b=>{
+    const pendingRate = b.count ? Math.round((b.pending/b.count)*100) : 0;
+    const isLeak = pendingRate >= 60 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${typeLabel(b.reason)}">${typeLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${pendingRate}% pending</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const skuIssues = computeRedSkuIssues(redCases).filter(s=>s.count>=2);
+  let callouts = '';
+  if(skuIssues.length){
+    skuIssues.forEach(s=>{
+      callouts += `<div class="callout"><b>${escapeHtml(s.sku)}</b> has come up in ${s.count} separate damage/wrong-item complaints (${escapeHtml(s.orders.join(', '))}) — worth flagging to your vendor or tightening QC on this SKU specifically.</div>`;
+    });
+  } else {
+    callouts = `<div class="callout">No SKU has repeated across damage/wrong-item cases yet in this batch — nothing pointing at a specific vendor or packing issue so far.</div>`;
+  }
+  document.getElementById('redInsightCallouts').innerHTML = callouts;
+}
+function computeRedMonthlyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = monthKey(o.date) || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, resolved:0, pending:0};
+    map[k].total++;
+    if(o.status==='RESOLVED') map[k].resolved++;
+    if(o.status==='PENDING') map[k].pending++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderRedMonthlyBreakdown(){
+  const months = computeRedMonthlyBreakdown(redCases);
+  let prevRate = null;
+  const rows = months.map(m=>{
+    const rate = m.total ? Math.round((m.resolved/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':monthLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.resolved} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div></div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('redMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Month</div><div>Total</div><div>Resolved</div><div>Pending</div><div></div><div>Resolution</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated cases yet.</div>'}
+  `;
+}
+function computeRedAgentLeaderboard(data){
+  const map = {};
+  data.forEach(o=>{
+    const a = o.agent || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0, resolved:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='RESOLVED') map[a].resolved++;
+    if(o.status==='PENDING') map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    if(a.agent==='Unassigned') return 1;
+    if(b.agent==='Unassigned') return -1;
+    const rateA = a.assigned ? a.resolved/a.assigned : 0;
+    const rateB = b.assigned ? b.resolved/b.assigned : 0;
+    return rateB - rateA;
+  });
+}
+function renderRedAgentLeaderboard(){
+  const lb = computeRedAgentLeaderboard(redCases);
+  const rows = lb.map((a,i)=>{
+    const rate = a.assigned ? Math.round((a.resolved/a.assigned)*100) : null;
+    const barClass = rate===null ? '' : rate>=60 ? '' : rate>=30 ? 'low' : 'crit';
+    const isTop = i===0 && a.agent!=='Unassigned' && rate!==null;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name ${a.agent==='Unassigned'?'unassigned':''}">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.resolved} ✅</div>
+        <div style="color:var(--amber)">${a.pending} 🔁</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('redAgentLeaderboard').innerHTML = `
+    <div class="lb-grid head"><div>Handler</div><div>Assigned</div><div>Resolved</div><div>Pending</div><div>Resolution rate</div><div></div></div>
+    ${rows}
+  `;
+}
+function applyRedFilters(){
+  return redCases.filter(o=>{
+    if(redFilters.status!=='ALL' && o.status!==redFilters.status) return false;
+    if(redFilters.priority==='HIGH' && !(o.status==='PENDING' && !o.initiated && daysOverdueRed_(o)>=0)) return false;
+    if(redFilters.reason!=='ALL' && o.type!==redFilters.reason) return false;
+    if(redFilters.agent!=='ALL' && (o.agent||'Unassigned')!==redFilters.agent) return false;
+    if(redFilters.month!=='ALL' && monthKey(o.date)!==redFilters.month) return false;
+    if(redFilters.search){
+      const s = redFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.awb} ${o.sku} ${o.remark}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderRedReasonFilterOptions(){
+  const sel = document.getElementById('redReasonFilter');
+  const reasons = [...new Set(redCases.map(o=>o.type).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All types</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${typeLabel(r)}</option>`).join('');
+  sel.value = redFilters.reason;
+
+  const agentSel = document.getElementById('redAgentFilter');
+  const agentsInData = [...new Set(redCases.map(o=>o.agent||'Unassigned'))].sort();
+  agentSel.innerHTML = '<option value="ALL">All handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = redFilters.agent;
+
+  const monthSel = document.getElementById('redMonthFilter');
+  const monthsInData = [...new Set(redCases.map(o=>monthKey(o.date)).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All months</option>' + monthsInData.map(k=>`<option value="${k}">${monthLabel(k)}</option>`).join('');
+  monthSel.value = redFilters.month;
+}
+function redStatusStamp(status){
+  if(status==='RESOLVED') return `<span class="stamp delivered">✓ RESOLVED</span>`;
+  return `<span class="stamp pending">↻ PENDING</span>`;
+}
+function renderRedTable(){
+  const data = applyRedFilters();
+  const body = document.getElementById('redTableBody');
+  document.getElementById('redEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>`
+    <tr onclick="openRedDrawerById('${escapeHtml(o.id)}')">
+      <td>${fmtDate(o.date)}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${redPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.awb) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${typeLabel(o.type)}</td>
+      <td class="awb-cell">${escapeHtml(o.sku) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.remark)}">${escapeHtml(o.remark) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="wa-pip ${o.initiated?'':'no'}">${o.initiated ? '✓ Yes' : '—'}</td>
+      <td class="awb-cell">${escapeHtml(o.newAwb) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="wa-pip ${o.qc?'':'no'}">${o.qc ? '✓ Pass' : '—'}</td>
+      <td>${o.agent && o.agent!=='Unassigned' ? escapeHtml(o.agent) : '<span style="color:var(--red);font-weight:700;">Unassigned</span>'}</td>
+      <td>${redStatusStamp(o.status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="WhatsApp customer" onclick="quickWhatsAppRed('${escapeHtml(o.id)}')">💬</div>
+          ${o.trackingLink ? `<div class="icon-btn" title="Track replacement" onclick="window.open('${escapeHtml(o.trackingLink)}','_blank')">🔗</div>` : ''}
+          <div class="icon-btn" title="Open" onclick="openRedDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+function renderAllRed(){
+  renderRedStats();
+  renderRedAlerts();
+  renderRedReasonChart();
+  renderRedMonthlyBreakdown();
+  renderRedAgentLeaderboard();
+  renderRedReasonFilterOptions();
+  renderRedTable();
+  updateSyncBadge();
+}
+
 /* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
-  const isRto = module === 'rto';
-  document.getElementById('ndrView').style.display = isRto ? 'none' : '';
-  document.getElementById('rtoView').style.display = isRto ? '' : 'none';
-  document.getElementById('railNdr').classList.toggle('active', !isRto);
-  document.getElementById('railRto').classList.toggle('active', isRto);
-  document.getElementById('pageTitle').textContent = isRto ? 'Prepaid RTO Reship Tracker' : 'NDR Control Tower';
-  document.getElementById('newBtn').textContent = isRto ? '+ New RTO Entry' : '+ New NDR Entry';
-  if(isRto) renderAllRto(); else renderAll();
+  document.getElementById('ndrView').style.display = module==='ndr' ? '' : 'none';
+  document.getElementById('rtoView').style.display = module==='rto' ? '' : 'none';
+  document.getElementById('returnsView').style.display = module==='returns' ? '' : 'none';
+  document.getElementById('railNdr').classList.toggle('active', module==='ndr');
+  document.getElementById('railRto').classList.toggle('active', module==='rto');
+  document.getElementById('railReturns').classList.toggle('active', module==='returns');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case' };
+  document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
+  document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
+  if(module==='rto') renderAllRto();
+  else if(module==='returns') renderAllRed();
+  else renderAll();
 }
 
 /* ---------------- Prepaid RTO drawer ---------------- */
@@ -1542,6 +1917,266 @@ function onRtoSyncFailure(err){
   scheduleRtoSyncSoon(15000);
 }
 
+/* ---------------- Return / Exchange / Damage drawer ---------------- */
+function openRedDrawerById(id){
+  const o = redCases.find(x=>x.id===id);
+  if(o) openRedDrawer(o);
+}
+function openRedDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'returns';
+  const o = order;
+  const agentOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.agent===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">AWB ${escapeHtml(o.awb) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+      <div class="field-group">
+        <label>Date (case logged)</label>
+        <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
+      </div>
+      <div class="field-group">
+        <label>AWB</label>
+        <input id="d_awb" value="${escapeHtml(o.awb)}">
+      </div>
+      <div class="field-group">
+        <label>Type</label>
+        <select id="d_type">
+          <option value="RETURN" ${o.type==='RETURN'?'selected':''}>↩ Return</option>
+          <option value="EXCHANGE" ${o.type==='EXCHANGE'?'selected':''}>⇄ Exchange</option>
+          <option value="DAMAGE" ${o.type==='DAMAGE'?'selected':''}>⚠ Damage</option>
+          <option value="WRONG_ITEM" ${o.type==='WRONG_ITEM'?'selected':''}>📦 Wrong Item</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Handler</label>
+        <select id="d_agent">
+          <option value="Unassigned" ${(!o.agent||o.agent==='Unassigned')?'selected':''}>Unassigned</option>
+          ${agentOptions}
+        </select>
+      </div>
+      <div class="field-group">
+        <label>SKU(s) affected</label>
+        <input id="d_sku" placeholder="e.g. HMS-136" value="${escapeHtml(o.sku)}">
+      </div>
+      <div class="field-group">
+        <label>Remark / customer complaint</label>
+        <textarea id="d_remark">${escapeHtml(o.remark)}</textarea>
+      </div>
+      <div class="field-group">
+        <label>Phone (for WhatsApp deep-link)</label>
+        <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)||''}">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="d_initiated" ${o.initiated?'checked':''}> Return / replacement process initiated
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="d_qc" ${o.qc?'checked':''}> QC check completed
+      </div>
+      <div class="field-group">
+        <label>Resolution</label>
+        <select id="d_resolutionType">
+          <option value="PENDING" ${o.resolutionType==='PENDING'?'selected':''}>Not decided yet</option>
+          <option value="REPLACEMENT_SENT" ${o.resolutionType==='REPLACEMENT_SENT'?'selected':''}>↗ Replacement sent</option>
+          <option value="CREDIT_ISSUED" ${o.resolutionType==='CREDIT_ISSUED'?'selected':''}>🎟 Credit issued</option>
+          <option value="REFUNDED" ${o.resolutionType==='REFUNDED'?'selected':''}>↺ Refunded</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>New / pickup AWB</label>
+        <input id="d_newAwb" value="${escapeHtml(o.newAwb)}">
+      </div>
+      <div class="field-group">
+        <label>Tracking link</label>
+        <input id="d_trackingLink" placeholder="https://…" value="${escapeHtml(o.trackingLink)}">
+      </div>
+      <div class="field-group">
+        <label>Credit note number</label>
+        <input id="d_creditNote" placeholder="e.g. OZ23301CR" value="${escapeHtml(o.creditNote)}">
+      </div>
+      <div class="field-group">
+        <label>Status</label>
+        <select id="d_status">
+          <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
+          <option value="RESOLVED" ${o.status==='RESOLVED'?'selected':''}>✅ Resolved</option>
+        </select>
+      </div>
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveRedDrawer()">Save changes</button>
+        <button class="btn" onclick="quickWhatsAppRed('${escapeHtml(o.id)}')">💬 Message customer</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the Return/Exchange/Damage sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  applyDrawerLockIfNeeded(o);
+}
+function saveRedDrawer(){
+  try {
+    const o = redCases.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this case to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(redCases.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already exists in the Return/Exchange/Damage tracker. Open the existing case instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    o.date = document.getElementById('d_date').value;
+    o.awb = document.getElementById('d_awb').value.trim();
+    o.type = document.getElementById('d_type').value;
+    o.agent = document.getElementById('d_agent').value;
+    o.sku = document.getElementById('d_sku').value;
+    o.remark = document.getElementById('d_remark').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.initiated = document.getElementById('d_initiated').checked;
+    o.qc = document.getElementById('d_qc').checked;
+    o.resolutionType = document.getElementById('d_resolutionType').value;
+    o.newAwb = document.getElementById('d_newAwb').value;
+    o.trackingLink = document.getElementById('d_trackingLink').value;
+    o.creditNote = document.getElementById('d_creditNote').value;
+    o.status = document.getElementById('d_status').value;
+
+    queueRedChange(o, isNewEntry);
+    saveRedCasesCache();
+    closeDrawer();
+    renderAllRed();
+    showToast(isNewEntry ? 'Case saved — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveRedDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  }
+}
+function openNewRedEntry(){
+  const blank = {id:'__new__', date:TODAY.toISOString().slice(0,10), awb:'', type:'RETURN', initiated:false, newAwb:'', sku:'', remark:'', resolutionType:'PENDING', creditNote:'', qc:false, trackingLink:'', agent: currentUser.displayName || 'Unassigned', status:'PENDING', phone:''};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'returns';
+  redCases.push(blank);
+  openRedDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New case';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+  const dateField = document.getElementById('d_date');
+  dateField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+
+  const d_idField = document.getElementById('d_id');
+  if(d_idField) d_idField.focus();
+}
+function quickWhatsAppRed(id){
+  const o = redCases.find(x=>x.id===id);
+  if(!o) return;
+  const verb = {RETURN:'return',EXCHANGE:'exchange',DAMAGE:'damage report',WRONG_ITEM:'wrong item report'}[o.type] || 'case';
+  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id} and your ${verb}. Could you help confirm a few details so we can resolve this quickly?`);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.id+' yet — open the case and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function exportRedCSV(){
+  const data = applyRedFilters();
+  const headers = ['Date','Order ID','AWB','Type','SKU','Remark','Initiated','New AWB','QC Pass','Resolution','Credit Note','Handler','Status'];
+  const rows = data.map(o=>[o.date,o.id,o.awb,typeLabel(o.type),o.sku,o.remark,o.initiated?'Yes':'No',o.newAwb,o.qc?'Yes':'No',resolutionLabel(o.resolutionType),o.creditNote,o.agent||'Unassigned',o.status]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'return-exchange-damage-export.csv';
+  a.click();
+}
+
+/* ---------------- Return / Exchange / Damage offline sync ---------------- */
+function queueRedChange(order, isNew){
+  const wasNew = redPendingChanges[order.id] && redPendingChanges[order.id].isNew;
+  redPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveRedPendingChanges();
+  updateSyncBadge();
+  scheduleRedSyncSoon(400);
+}
+function scheduleRedSyncSoon(delay){
+  clearTimeout(redSyncTimer);
+  redSyncTimer = setTimeout(attemptSyncRed, delay || 1500);
+}
+function attemptSyncRed(){
+  const ids = Object.keys(redPendingChanges);
+  if(!ids.length || redSyncInFlight || !authToken) return;
+  redSyncInFlight = true;
+  const batch = ids.map(id => redPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncRed', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      redSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleRedSyncSoon(15000);
+        return;
+      }
+      onRedSyncSuccess(res, batch);
+    })
+    .catch(err => { redSyncInFlight=false; onRedSyncFailure(err); });
+}
+function onRedSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleRedSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = redPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete redPendingChanges[orderId];
+  });
+  let hadLockedRejection = false;
+  (res.rejected||[]).forEach(r=>{
+    if(redPendingChanges[r.orderId]) delete redPendingChanges[r.orderId];
+    if(r.duplicate){
+      redCases = redCases.filter(o=>o.id!==r.orderId);
+    }
+    if(r.locked) hadLockedRejection = true;
+    console.warn('Return/Exchange/Damage sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = redCases.findIndex(x=>x.id===o.id);
+    if(idx>-1) redCases[idx] = Object.assign({}, redCases[idx], o);
+    else redCases.push(o);
+  });
+  saveRedPendingChanges();
+  saveRedCasesCache();
+  lastSyncTime = new Date();
+  renderAllRed();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(hadLockedRejection) bootstrapFromServer();
+  if(Object.keys(redPendingChanges).length) scheduleRedSyncSoon(4000);
+}
+function onRedSyncFailure(err){
+  console.warn('Return/Exchange/Damage sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleRedSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -1550,7 +2185,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -1634,6 +2269,18 @@ function onBootstrapSuccess(res){
   }
   rtoOrders = mergedRto;
 
+  // Same merge + in-progress-draft protection for the Return/Exchange/Damage module.
+  const serverRedCases = res.redCases || [];
+  const mergedRed = serverRedCases.map(so => redPendingChanges[so.id] ? Object.assign({}, so, redPendingChanges[so.id].payload) : so);
+  Object.keys(redPendingChanges).forEach(id=>{
+    if(!mergedRed.find(o=>o.id===id)) mergedRed.push(redPendingChanges[id].payload);
+  });
+  const inProgressRedDraft = redCases.find(o=>o.id==='__new__');
+  if(inProgressRedDraft && !mergedRed.find(o=>o.id==='__new__')){
+    mergedRed.push(inProgressRedDraft);
+  }
+  redCases = mergedRed;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -1645,14 +2292,22 @@ function onBootstrapSuccess(res){
     const rtoSlaInput = document.getElementById('rtoSlaDays');
     if(rtoSlaInput) rtoSlaInput.value = reshipSlaDays;
   }
+  if(res.settings && res.settings.INITIATE_SLA_DAYS){
+    initiateSlaDays = parseInt(res.settings.INITIATE_SLA_DAYS,10) || 2;
+    const redSlaInput = document.getElementById('redSlaDays');
+    if(redSlaInput) redSlaInput.value = initiateSlaDays;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
   saveRtoOrdersCache();
+  saveRedCasesCache();
   renderAll();
   renderAllRto();
+  renderAllRed();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
+  if(Object.keys(redPendingChanges).length) attemptSyncRed();
 }
 
 function queueChange(order, isNew){
@@ -1757,7 +2412,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -1780,6 +2435,12 @@ function pushReshipSlaSetting(){
 function pushSlaSetting(){
   if(!authToken) return;
   apiPost('setSetting', { key:'SLA_DAYS', value: slaAutoRtoDays })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushInitiateSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'INITIATE_SLA_DAYS', value: initiateSlaDays })
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
@@ -1959,6 +2620,7 @@ function closeDrawer(){
   // drop it rather than leave a phantom blank row sitting in the list.
   if(activeDrawerOrder==='__new__'){
     if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -2153,8 +2815,16 @@ function bindEvents(){
     renderAlerts();
     pushSlaSetting();
   });
-  document.getElementById('exportBtn').addEventListener('click', ()=>{ currentModule==='rto' ? exportRtoCSV() : exportCSV(); });
-  document.getElementById('newBtn').addEventListener('click', ()=>{ currentModule==='rto' ? openNewRtoEntry() : openNewEntry(); });
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    if(currentModule==='rto') exportRtoCSV();
+    else if(currentModule==='returns') exportRedCSV();
+    else exportCSV();
+  });
+  document.getElementById('newBtn').addEventListener('click', ()=>{
+    if(currentModule==='rto') openNewRtoEntry();
+    else if(currentModule==='returns') openNewRedEntry();
+    else openNewEntry();
+  });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
 
   // ---- Prepaid RTO toolbar ----
@@ -2182,21 +2852,50 @@ function bindEvents(){
     renderRtoAlerts();
     pushReshipSlaSetting();
   });
+
+  // ---- Return / Exchange / Damage toolbar ----
+  document.getElementById('redSearchInput').addEventListener('input', e=>{ redFilters.search = e.target.value; renderRedTable(); });
+  document.getElementById('redStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#redStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    redFilters.status = chip.dataset.status;
+    renderRedTable();
+  });
+  document.getElementById('redPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    redFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderRedTable();
+  });
+  document.getElementById('redReasonFilter').addEventListener('change', e=>{ redFilters.reason = e.target.value; renderRedTable(); });
+  document.getElementById('redAgentFilter').addEventListener('change', e=>{ redFilters.agent = e.target.value; renderRedTable(); });
+  document.getElementById('redMonthFilter').addEventListener('change', e=>{ redFilters.month = e.target.value; renderRedTable(); });
+  document.getElementById('redSlaDays').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    initiateSlaDays = (v && v > 0) ? v : 2;
+    saveSettingsCache();
+    renderRedAlerts();
+    pushInitiateSlaSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
     if(activeDrawerOrder==='__new__'){
       if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
+  setInterval(()=>{ if(Object.keys(redPendingChanges).length) attemptSyncRed(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -2204,8 +2903,10 @@ function bindEvents(){
 function startApp(){
   document.getElementById('slaDays').value = slaAutoRtoDays;
   document.getElementById('rtoSlaDays').value = reshipSlaDays;
+  document.getElementById('redSlaDays').value = initiateSlaDays;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
+  renderAllRed();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
