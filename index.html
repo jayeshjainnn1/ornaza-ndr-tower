@@ -699,7 +699,7 @@ let redSyncInFlight = false;
 let redSyncTimer = null;
 let redFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
 function typeLabel(t){
-  return {RETURN:'↩ Return',EXCHANGE:'⇄ Exchange',DAMAGE:'⚠ Damage',WRONG_ITEM:'📦 Wrong Item'}[t] || t;
+  return {RETURN:'↩ Return',EXCHANGE:'⇄ Exchange',DAMAGE:'⚠ Damage',WRONG_ITEM:'📦 Wrong Item',DELIVERED_NOT_RECEIVED:'📭 Delivered but not received'}[t] || t;
 }
 function resolutionLabel(r){
   return {PENDING:'— Not decided',REPLACEMENT_SENT:'↗ Replacement sent',CREDIT_ISSUED:'🎟 Credit issued',REFUNDED:'↺ Refunded'}[r] || '— Not decided';
@@ -1954,6 +1954,7 @@ function openRedDrawer(order){
           <option value="EXCHANGE" ${o.type==='EXCHANGE'?'selected':''}>⇄ Exchange</option>
           <option value="DAMAGE" ${o.type==='DAMAGE'?'selected':''}>⚠ Damage</option>
           <option value="WRONG_ITEM" ${o.type==='WRONG_ITEM'?'selected':''}>📦 Wrong Item</option>
+          <option value="DELIVERED_NOT_RECEIVED" ${o.type==='DELIVERED_NOT_RECEIVED'?'selected':''}>📭 Delivered but not received</option>
         </select>
       </div>
       <div class="field-group">
@@ -2079,7 +2080,7 @@ function openNewRedEntry(){
 function quickWhatsAppRed(id){
   const o = redCases.find(x=>x.id===id);
   if(!o) return;
-  const verb = {RETURN:'return',EXCHANGE:'exchange',DAMAGE:'damage report',WRONG_ITEM:'wrong item report'}[o.type] || 'case';
+  const verb = {RETURN:'return',EXCHANGE:'exchange',DAMAGE:'damage report',WRONG_ITEM:'wrong item report',DELIVERED_NOT_RECEIVED:'delivered but not received report'}[o.type] || 'case';
   const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id} and your ${verb}. Could you help confirm a few details so we can resolve this quickly?`);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
