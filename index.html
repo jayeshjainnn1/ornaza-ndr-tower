@@ -1135,9 +1135,12 @@ function computeRtoStats(data){
 }
 function renderRtoStats(){
   const s = computeRtoStats(rtoOrders);
-  document.getElementById('rtoStatsRow').innerHTML = `
+  const row = document.getElementById('rtoStatsRow');
+  row.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
+  row.innerHTML = `
     <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Prepaid RTO</div><div class="value">${s.total}</div><div class="sub">in this batch</div></div>
-    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">${s.delivered} of these confirmed delivered</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">new order sent out</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Delivered ✅</div><div class="value">${s.delivered}</div><div class="sub">2nd shipment confirmed</div></div>
     <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">awaiting action</div></div>
     <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Refunded ↺</div><div class="value">${s.refunded}</div><div class="sub">refund / store credit</div></div>
     <div class="stat-card rate"><div class="label">Reship Rate</div><div class="value">${s.rate}%</div><div class="sub">(reshipped+delivered) ÷ decided</div></div>
