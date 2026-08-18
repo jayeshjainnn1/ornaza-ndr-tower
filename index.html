@@ -2016,7 +2016,7 @@ function renderWaTable(){
   document.getElementById('waEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
     <tr onclick="openWaDrawerById('${escapeHtml(o.id)}')">
-      <td>${fmtDateTime(o.loggedAt)}</td>
+      <td>${fmtDate(dayKey(o.loggedAt))}</td>
       <td class="oid-cell">${escapeHtml(o.id)}${waPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
       <td class="awb-cell">${escapeHtml(o.phone)}</td>
       <td>${waTypeLabel(o.issueType)}</td>
@@ -2678,6 +2678,10 @@ function openWaDrawer(order){
           </select>
         </div>
         <div class="field-group">
+          <label>Remarked date</label>
+          <input type="date" id="d_remarkedAt" value="${o.remarkedAt ? o.remarkedAt.slice(0,10) : ''}" onpaste="handleDatePaste(event,this)">
+        </div>
+        <div class="field-group">
           <label>Status</label>
           <select id="d_status">
             <option value="NEW" ${o.status==='NEW'?'selected':''}>🔁 Awaiting remark</option>
@@ -2722,8 +2726,12 @@ function saveWaDrawer(){
     o.loggedBy = document.getElementById('d_loggedBy').value;
     o.remark = document.getElementById('d_remark').value;
     const remarkedBy = document.getElementById('d_remarkedBy').value;
-    if(remarkedBy && !o.remarkedAt) o.remarkedAt = TODAY.toISOString().slice(0,16);
-    if(!remarkedBy) o.remarkedAt = '';
+    const remarkedDateVal = document.getElementById('d_remarkedAt').value;
+    if(remarkedBy){
+      o.remarkedAt = remarkedDateVal ? (remarkedDateVal + 'T00:00') : (o.remarkedAt || TODAY.toISOString().slice(0,16));
+    } else {
+      o.remarkedAt = '';
+    }
     o.remarkedBy = remarkedBy;
     o.status = document.getElementById('d_status').value;
 
