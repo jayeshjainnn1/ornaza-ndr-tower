@@ -742,6 +742,7 @@
             <th>Logged By</th>
             <th>NDR Remark</th>
             <th>Remarked By</th>
+            <th>Remarked Date</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -2024,6 +2025,7 @@ function renderWaTable(){
       <td>${escapeHtml(o.loggedBy)}</td>
       <td class="feedback-cell" title="${escapeHtml(o.remark)}">${escapeHtml(o.remark) || '<span style="color:var(--red);font-weight:600;">Awaiting remark</span>'}</td>
       <td>${o.remarkedBy ? escapeHtml(o.remarkedBy) : '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${fmtDate(dayKey(o.remarkedAt))}</td>
       <td>${waStatusStamp(o.status)}</td>
       <td onclick="event.stopPropagation()">
         <div class="row-actions">
@@ -2772,8 +2774,8 @@ function quickWhatsAppWa(id){
 }
 function exportWaCSV(){
   const data = applyWaFilters();
-  const headers = ['Logged At','Order ID','Phone','Issue Type','Customer Message','Logged By','Remark','Remarked By','Status'];
-  const rows = data.map(o=>[o.loggedAt,o.id,o.phone,waTypeLabel(o.issueType),o.message,o.loggedBy,o.remark,o.remarkedBy,o.status]);
+  const headers = ['Logged At','Order ID','Phone','Issue Type','Customer Message','Logged By','Remark','Remarked By','Remarked Date','Status'];
+  const rows = data.map(o=>[o.loggedAt,o.id,o.phone,waTypeLabel(o.issueType),o.message,o.loggedBy,o.remark,o.remarkedBy,o.remarkedAt?o.remarkedAt.slice(0,10):'',o.status]);
   const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv'});
   const a = document.createElement('a');
