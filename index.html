@@ -516,6 +516,7 @@
         <div class="chip active" data-status="ALL">All</div>
         <div class="chip" data-status="PENDING">Pending reship</div>
         <div class="chip" data-status="RESHIPPED">Reshipped</div>
+        <div class="chip" data-status="DELIVERED">Delivered</div>
         <div class="chip" data-status="REFUNDED">Refunded</div>
       </div>
       <div class="chip-group" id="rtoPrioChips">
@@ -1125,20 +1126,21 @@ function daysOverdueRto_(o){ return daysSinceLoggedRto_(o) - reshipSlaDays; }
 function computeRtoStats(data){
   const total = data.length;
   const reshipped = data.filter(o=>o.status==='RESHIPPED').length;
+  const delivered = data.filter(o=>o.status==='DELIVERED').length;
   const pending = data.filter(o=>o.status==='PENDING').length;
   const refunded = data.filter(o=>o.status==='REFUNDED').length;
-  const decided = reshipped + refunded;
-  const rate = decided ? Math.round((reshipped/decided)*100) : 0;
-  return {total, reshipped, pending, refunded, rate};
+  const decided = reshipped + delivered + refunded;
+  const rate = decided ? Math.round(((reshipped+delivered)/decided)*100) : 0;
+  return {total, reshipped, delivered, pending, refunded, rate};
 }
 function renderRtoStats(){
   const s = computeRtoStats(rtoOrders);
   document.getElementById('rtoStatsRow').innerHTML = `
     <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Prepaid RTO</div><div class="value">${s.total}</div><div class="sub">in this batch</div></div>
-    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">new order sent out</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">${s.delivered} of these confirmed delivered</div></div>
     <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">awaiting action</div></div>
     <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Refunded ↺</div><div class="value">${s.refunded}</div><div class="sub">refund / store credit</div></div>
-    <div class="stat-card rate"><div class="label">Reship Rate</div><div class="value">${s.rate}%</div><div class="sub">reshipped ÷ (reshipped+refunded)</div></div>
+    <div class="stat-card rate"><div class="label">Reship Rate</div><div class="value">${s.rate}%</div><div class="sub">(reshipped+delivered) ÷ decided</div></div>
   `;
 }
 function renderRtoAlerts(){
@@ -1173,7 +1175,7 @@ function computeRtoReasonBreakdown(data){
     const r = o.reason || 'Unspecified';
     if(!map[r]) map[r] = {reason:r, count:0, reshipped:0, refunded:0, pending:0};
     map[r].count++;
-    if(o.status==='RESHIPPED') map[r].reshipped++;
+    if(o.status==='RESHIPPED' || o.status==='DELIVERED') map[r].reshipped++;
     if(o.status==='REFUNDED') map[r].refunded++;
     if(o.status==='PENDING') map[r].pending++;
   });
@@ -1215,7 +1217,7 @@ function computeRtoMonthlyBreakdown(data){
     const k = monthKey(o.date) || 'Unknown';
     if(!map[k]) map[k] = {key:k, total:0, reshipped:0, pending:0, refunded:0};
     map[k].total++;
-    if(o.status==='RESHIPPED') map[k].reshipped++;
+    if(o.status==='RESHIPPED' || o.status==='DELIVERED') map[k].reshipped++;
     if(o.status==='PENDING') map[k].pending++;
     if(o.status==='REFUNDED') map[k].refunded++;
   });
@@ -1257,7 +1259,7 @@ function computeRtoAgentLeaderboard(data){
     const a = o.agent || 'Unassigned';
     if(!map[a]) map[a] = {agent:a, assigned:0, reshipped:0, refunded:0, pending:0};
     map[a].assigned++;
-    if(o.status==='RESHIPPED') map[a].reshipped++;
+    if(o.status==='RESHIPPED' || o.status==='DELIVERED') map[a].reshipped++;
     if(o.status==='REFUNDED') map[a].refunded++;
     if(o.status==='PENDING') map[a].pending++;
   });
@@ -1323,6 +1325,7 @@ function renderRtoReasonFilterOptions(){
   monthSel.value = rtoFilters.month;
 }
 function rtoStatusStamp(status){
+  if(status==='DELIVERED') return `<span class="stamp delivered">✓ DELIVERED</span>`;
   if(status==='RESHIPPED') return `<span class="stamp delivered">✓ RESHIPPED</span>`;
   if(status==='REFUNDED') return `<span class="stamp rto">↺ REFUNDED</span>`;
   return `<span class="stamp pending">↻ PENDING</span>`;
@@ -1746,6 +1749,7 @@ function openRtoDrawer(order){
         <select id="d_status">
           <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
           <option value="RESHIPPED" ${o.status==='RESHIPPED'?'selected':''}>✅ Reshipped</option>
+          <option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>✓ Delivered (2nd shipment confirmed)</option>
           <option value="REFUNDED" ${o.status==='REFUNDED'?'selected':''}>↺ Refunded</option>
         </select>
       </div>
