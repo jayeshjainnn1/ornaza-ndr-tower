@@ -190,6 +190,15 @@
   .drawer-note{font-size:11.5px;color:var(--slate-soft);background:var(--paper);padding:8px 10px;border-radius:7px;margin-top:16px;line-height:1.5;}
   .drawer-error{background:var(--red-soft);color:var(--red);padding:9px 11px;border-radius:7px;font-size:12.5px;margin-bottom:16px;font-weight:600;line-height:1.4;}
   .drawer-lock-note{background:var(--amber-soft);color:#8a6d1f;padding:9px 11px;border-radius:7px;font-size:12.5px;margin-bottom:16px;font-weight:600;line-height:1.4;}
+  .role-section{border-radius:10px;padding:14px 14px 4px;margin-bottom:18px;}
+  .role-section.exec{background:var(--rose-soft);border:1px solid var(--rose);}
+  .role-section.ndr{background:var(--paper);border:1px solid var(--line);}
+  .role-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
+  .role-header .role-badge{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
+  .role-header.exec-h .role-badge{background:var(--rose);}
+  .role-header.ndr-h .role-badge{background:var(--slate);}
+  .role-header.exec-h{color:var(--rose-deep);}
+  .role-header.ndr-h{color:var(--slate);}
 
   /* ---------- Toast (replaces unreliable alert() popups on installed/mobile apps) ---------- */
   .toast-stack{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
@@ -329,6 +338,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
       Returns
       <span class="tag">Return / Exchange / Damage Tracker — live</span>
+    </div>
+    <div class="rail-item" id="railWa" onclick="switchModule('wa')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      WA Log
+      <span class="tag">WhatsApp Issue Log — live</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -645,6 +660,101 @@
     </div>
     </div>
     <!-- ================= /RETURN / EXCHANGE / DAMAGE MODULE ================= -->
+
+    <!-- ================= WHATSAPP ISSUE LOG MODULE ================= -->
+    <div id="waView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="waStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>⚠ Action needed — awaiting NDR remark</h3>
+        <div class="sla-config">
+          <label for="waSlaHours">Flag issues with no remark within</label>
+          <input type="number" id="waSlaHours" min="1" max="24" value="4">
+          <span>hour(s) of being logged</span>
+        </div>
+        <span id="waAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="waAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>Issue type breakdown</h3>
+        <div id="waReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What's piling up</h3>
+        <div id="waInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- DAY-WISE VOLUME -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Day-wise volume</h3>
+      <div id="waMonthlyBreakdown"></div>
+    </div>
+
+    <!-- TWO-ROLE LEADERBOARDS -->
+    <div class="insights-row" style="margin-bottom:22px;">
+      <div class="panel">
+        <h3>📱 Logged by (Executive intake)</h3>
+        <div id="waExecLeaderboard"></div>
+      </div>
+      <div class="panel">
+        <h3>🎯 Remarked by (NDR performance)</h3>
+        <div id="waAgentLeaderboard"></div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="waSearchInput" placeholder="Search Order ID, phone or message…">
+      </div>
+      <div class="chip-group" id="waStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="NEW">Awaiting remark</div>
+        <div class="chip" data-status="IN_PROGRESS">In progress</div>
+        <div class="chip" data-status="RESOLVED">Resolved</div>
+      </div>
+      <div class="chip-group" id="waPrioChips">
+        <div class="chip" data-prio="HIGH">⚠ Overdue only</div>
+      </div>
+      <select class="reason-filter" id="waMonthFilter"><option value="ALL">All days</option></select>
+      <select class="reason-filter" id="waReasonFilter"><option value="ALL">All issue types</option></select>
+      <select class="reason-filter" id="waAgentFilter"><option value="ALL">All NDR handlers</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Logged</th>
+            <th>Order ID</th>
+            <th>Phone</th>
+            <th>Issue Type</th>
+            <th>Customer Message</th>
+            <th>Logged By</th>
+            <th>NDR Remark</th>
+            <th>Remarked By</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="waTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="waEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No issues match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /WHATSAPP ISSUE LOG MODULE ================= -->
   </main>
 </div>
 
@@ -706,6 +816,40 @@ function resolutionLabel(r){
   return {PENDING:'— Not decided',REPLACEMENT_SENT:'↗ Replacement sent',CREDIT_ISSUED:'🎟 Credit issued',REFUNDED:'↺ Refunded'}[r] || '— Not decided';
 }
 
+/* ---------------- WhatsApp Issue Log module state ---------------- */
+let waIssues = [];
+let remarkSlaHours = 4;
+let waPendingChanges = {};
+let waSyncInFlight = false;
+let waSyncTimer = null;
+let waFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function waTypeLabel(t){
+  return {DELAY:'⏱ Delay',DELIVERED:'✅ Delivered',ADDRESS_CHANGE:'📍 Address Change',PHONE_UPDATE:'📞 Phone Update',OTHER:'💬 Other'}[t] || t;
+}
+/* WhatsApp issues are timestamped to the minute (not just the day), since
+   same-day response time is the whole point of this log — separate
+   date-only helpers (parseD/fmtDate/monthKey) don't carry time-of-day. */
+function parseISO_(s){ return s ? new Date(s) : null; }
+function fmtDateTime(s){
+  if(!s) return '<span style="color:#d3b9be">—</span>';
+  const d = parseISO_(s);
+  if(!d || isNaN(d.getTime())) return '<span style="color:#d3b9be">—</span>';
+  return `${pad2_(d.getDate())}-${pad2_(d.getMonth()+1)}-${String(d.getFullYear()).slice(-2)} ${pad2_(d.getHours())}:${pad2_(d.getMinutes())}`;
+}
+function dayKey(iso){ return iso ? iso.slice(0,10) : null; }
+function dayLabel(key){
+  const d = new Date(key+'T00:00:00');
+  const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return `${DAY_NAMES[d.getDay()]} ${pad2_(d.getDate())} ${MONTH_NAMES[d.getMonth()].slice(0,3)}`;
+}
+function hoursSinceWa_(iso){
+  if(!iso) return 0;
+  const d = parseISO_(iso);
+  if(!d || isNaN(d.getTime())) return 0;
+  return (TODAY - d) / (1000*60*60);
+}
+function hoursOverdueWa_(o){ return hoursSinceWa_(o.loggedAt) - remarkSlaHours; }
+
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
 function monthLabel(key){
   const [y,m] = key.split('-');
@@ -736,6 +880,12 @@ function loadLocalCache(){
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.INITIATE_SLA_DAYS) initiateSlaDays = parseInt(s.INITIATE_SLA_DAYS,10) || 2;
   }catch(e){}
+  try{ const wi = JSON.parse(localStorage.getItem('ndr_cache_wa_issues')||'[]'); waIssues = Array.isArray(wi) ? wi : []; }catch(e){ waIssues = []; }
+  try{ waPendingChanges = JSON.parse(localStorage.getItem('ndr_wa_pending_changes')||'{}'); }catch(e){ waPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.REMARK_SLA_HOURS) remarkSlaHours = parseInt(s.REMARK_SLA_HOURS,10) || 4;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -744,12 +894,14 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
 function saveRedCasesCache(){ localStorage.setItem('ndr_cache_red_cases', JSON.stringify(redCases)); }
 function saveRedPendingChanges(){ localStorage.setItem('ndr_red_pending_changes', JSON.stringify(redPendingChanges)); }
+function saveWaIssuesCache(){ localStorage.setItem('ndr_cache_wa_issues', JSON.stringify(waIssues)); }
+function saveWaPendingChanges(){ localStorage.setItem('ndr_wa_pending_changes', JSON.stringify(waPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -1628,21 +1780,290 @@ function renderAllRed(){
   updateSyncBadge();
 }
 
+/* ============================================================================
+   WHATSAPP ISSUE LOG — fourth module, same offline/sync patterns as the
+   three above. Two-role workflow (an exec logs the incoming WhatsApp
+   message, an NDR person adds a remark) but still one row per issue, its
+   own Google Sheet tab.
+   ============================================================================ */
+function computeWaStats(data){
+  const total = data.length;
+  const awaiting = data.filter(o=>o.status==='NEW').length;
+  const inProgress = data.filter(o=>o.status==='IN_PROGRESS').length;
+  const resolved = data.filter(o=>o.status==='RESOLVED').length;
+  const rate = total ? Math.round((resolved/total)*100) : 0;
+  return {total, awaiting, inProgress, resolved, rate};
+}
+function renderWaStats(){
+  const s = computeWaStats(waIssues);
+  document.getElementById('waStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Issues</div><div class="value">${s.total}</div><div class="sub">in this log</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Awaiting Remark 🔁</div><div class="value">${s.awaiting}</div><div class="sub">not yet picked up by NDR</div></div>
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">In Progress ⚙</div><div class="value">${s.inProgress}</div><div class="sub">remarked, being worked</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Resolved ✅</div><div class="value">${s.resolved}</div><div class="sub">closed out</div></div>
+    <div class="stat-card rate"><div class="label">Resolution Rate</div><div class="value">${s.rate}%</div><div class="sub">resolved ÷ total issues</div></div>
+  `;
+}
+function renderWaAlerts(){
+  const urgent = waIssues.filter(o=> o.status==='NEW' && hoursOverdueWa_(o) >= 0)
+                        .sort((a,b)=> hoursOverdueWa_(b)-hoursOverdueWa_(a));
+  document.getElementById('waAlertCount').textContent = urgent.length ? `${urgent.length} issue${urgent.length>1?'s':''} waiting` : '';
+  const box = document.getElementById('waAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing waiting past ${remarkSlaHours}h — the NDR team is caught up.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const hrs = Math.floor(hoursSinceWa_(o.loggedAt));
+    return `
+    <div class="alert-card">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${waTypeLabel(o.issueType)} · ${escapeHtml(o.phone)}</div>
+      <div class="stale">Logged ${hrs}h ago — no remark yet</div>
+      <div style="font-size:11px;margin-top:2px;color:var(--slate-soft);">Logged by: ${escapeHtml(o.loggedBy)}</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openWaDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppWa('${escapeHtml(o.id)}')">WhatsApp</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeWaTypeBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.issueType || 'OTHER';
+    if(!map[r]) map[r] = {reason:r, count:0, resolved:0, pending:0};
+    map[r].count++;
+    if(o.status==='RESOLVED') map[r].resolved++;
+    else map[r].pending++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderWaReasonChart(){
+  const breakdown = computeWaTypeBreakdown(waIssues);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('waReasonChart').innerHTML = breakdown.map(b=>{
+    const pendingRate = b.count ? Math.round((b.pending/b.count)*100) : 0;
+    const isLeak = pendingRate >= 60 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${waTypeLabel(b.reason)}">${waTypeLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${pendingRate}% open</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const withResponse = {};
+  waIssues.forEach(o=>{
+    if(!o.remarkedAt) return;
+    const hrs = (parseISO_(o.remarkedAt) - parseISO_(o.loggedAt)) / (1000*60*60);
+    if(!withResponse[o.issueType]) withResponse[o.issueType] = [];
+    withResponse[o.issueType].push(hrs);
+  });
+  let callouts = '';
+  const topVolume = breakdown[0];
+  if(topVolume){
+    callouts += `<div class="callout"><b>${waTypeLabel(topVolume.reason)}</b> is your highest-volume issue type (${topVolume.count} messages) — worth a saved WhatsApp reply template for it.</div>`;
+  }
+  const slowest = Object.entries(withResponse)
+    .map(([type,hrs])=>({type, avg: hrs.reduce((a,b)=>a+b,0)/hrs.length}))
+    .sort((a,b)=>b.avg-a.avg)[0];
+  if(slowest && slowest.avg >= 1){
+    callouts += `<div class="callout"><b>${waTypeLabel(slowest.type)}</b> takes the longest to get an NDR remark — averaging ${slowest.avg.toFixed(1)}h. Worth checking why it stalls.</div>`;
+  }
+  const awaitingCount = waIssues.filter(o=>o.status==='NEW').length;
+  if(awaitingCount >= 3){
+    callouts += `<div class="callout"><b>${awaitingCount} issues</b> are currently sitting with no NDR remark at all — the queue is building up faster than it's being cleared right now.</div>`;
+  }
+  if(!callouts) callouts = `<div class="callout">Queue looks healthy — nothing piling up in this batch.</div>`;
+  document.getElementById('waInsightCallouts').innerHTML = callouts;
+}
+function computeWaDailyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = dayKey(o.loggedAt) || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, resolved:0, pending:0};
+    map[k].total++;
+    if(o.status==='RESOLVED') map[k].resolved++;
+    else map[k].pending++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderWaMonthlyBreakdown(){
+  const days = computeWaDailyBreakdown(waIssues);
+  let prevRate = null;
+  const rows = days.map(m=>{
+    const rate = m.total ? Math.round((m.resolved/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':dayLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.resolved} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div></div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('waMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Day</div><div>Total</div><div>Resolved</div><div>Open</div><div></div><div>Resolution</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated issues yet.</div>'}
+  `;
+}
+function renderWaExecLeaderboard(){
+  const map = {};
+  waIssues.forEach(o=>{
+    const a = o.loggedBy || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0};
+    map[a].assigned++;
+  });
+  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+    <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
+      <div class="lb-name">${escapeHtml(a.agent)}</div>
+      <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*12)}%"></div></div>
+      <div class="lb-rate">${a.assigned} logged</div>
+    </div>`).join('');
+  document.getElementById('waExecLeaderboard').innerHTML = `
+    <div class="lb-grid head" style="grid-template-columns:130px 1fr 60px;"><div>Executive</div><div>Volume</div><div></div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No issues logged yet.</div>'}
+  `;
+}
+function computeWaAgentLeaderboard(data){
+  const map = {};
+  data.forEach(o=>{
+    if(!o.remarkedBy) return;
+    const a = o.remarkedBy;
+    if(!map[a]) map[a] = {agent:a, assigned:0, resolved:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='RESOLVED') map[a].resolved++;
+    else map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    const rateA = a.assigned ? a.resolved/a.assigned : 0;
+    const rateB = b.assigned ? b.resolved/b.assigned : 0;
+    return rateB - rateA;
+  });
+}
+function renderWaAgentLeaderboard(){
+  const lb = computeWaAgentLeaderboard(waIssues);
+  const rows = lb.map((a,i)=>{
+    const rate = a.assigned ? Math.round((a.resolved/a.assigned)*100) : null;
+    const barClass = rate===null ? '' : rate>=60 ? '' : rate>=30 ? 'low' : 'crit';
+    const isTop = i===0 && rate!==null && a.assigned>0;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.resolved} ✅</div>
+        <div style="color:var(--amber)">${a.pending} 🔁</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('waAgentLeaderboard').innerHTML = `
+    <div class="lb-grid head"><div>NDR Person</div><div>Assigned</div><div>Resolved</div><div>Open</div><div>Resolution rate</div><div></div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No remarks logged yet.</div>'}
+  `;
+}
+function applyWaFilters(){
+  return waIssues.filter(o=>{
+    if(waFilters.status!=='ALL' && o.status!==waFilters.status) return false;
+    if(waFilters.priority==='HIGH' && !(o.status==='NEW' && hoursOverdueWa_(o)>=0)) return false;
+    if(waFilters.reason!=='ALL' && o.issueType!==waFilters.reason) return false;
+    if(waFilters.agent!=='ALL' && (o.remarkedBy||'Unassigned')!==waFilters.agent) return false;
+    if(waFilters.month!=='ALL' && dayKey(o.loggedAt)!==waFilters.month) return false;
+    if(waFilters.search){
+      const s = waFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.phone} ${o.message}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderWaReasonFilterOptions(){
+  const sel = document.getElementById('waReasonFilter');
+  const reasons = [...new Set(waIssues.map(o=>o.issueType).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All issue types</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${waTypeLabel(r)}</option>`).join('');
+  sel.value = waFilters.reason;
+
+  const agentSel = document.getElementById('waAgentFilter');
+  const agentsInData = [...new Set([...AGENTS, ...waIssues.map(o=>o.remarkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  agentSel.innerHTML = '<option value="ALL">All NDR handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = waFilters.agent;
+
+  const monthSel = document.getElementById('waMonthFilter');
+  const daysInData = [...new Set(waIssues.map(o=>dayKey(o.loggedAt)).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All days</option>' + daysInData.map(k=>`<option value="${k}">${dayLabel(k)}</option>`).join('');
+  monthSel.value = waFilters.month;
+}
+function waStatusStamp(status){
+  if(status==='RESOLVED') return `<span class="stamp delivered">✓ RESOLVED</span>`;
+  if(status==='IN_PROGRESS') return `<span class="stamp pending">⚙ IN PROGRESS</span>`;
+  return `<span class="stamp rto">🔁 AWAITING REMARK</span>`;
+}
+function renderWaTable(){
+  const data = applyWaFilters();
+  const body = document.getElementById('waTableBody');
+  document.getElementById('waEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>`
+    <tr onclick="openWaDrawerById('${escapeHtml(o.id)}')">
+      <td>${fmtDateTime(o.loggedAt)}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${waPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.phone)}</td>
+      <td>${waTypeLabel(o.issueType)}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.message)}">${escapeHtml(o.message) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${escapeHtml(o.loggedBy)}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.remark)}">${escapeHtml(o.remark) || '<span style="color:var(--red);font-weight:600;">Awaiting remark</span>'}</td>
+      <td>${o.remarkedBy ? escapeHtml(o.remarkedBy) : '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${waStatusStamp(o.status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="WhatsApp customer" onclick="quickWhatsAppWa('${escapeHtml(o.id)}')">💬</div>
+          <div class="icon-btn" title="Open" onclick="openWaDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+function renderAllWa(){
+  renderWaStats();
+  renderWaAlerts();
+  renderWaReasonChart();
+  renderWaMonthlyBreakdown();
+  renderWaExecLeaderboard();
+  renderWaAgentLeaderboard();
+  renderWaReasonFilterOptions();
+  renderWaTable();
+  updateSyncBadge();
+}
+
 /* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
   document.getElementById('ndrView').style.display = module==='ndr' ? '' : 'none';
   document.getElementById('rtoView').style.display = module==='rto' ? '' : 'none';
   document.getElementById('returnsView').style.display = module==='returns' ? '' : 'none';
+  document.getElementById('waView').style.display = module==='wa' ? '' : 'none';
   document.getElementById('railNdr').classList.toggle('active', module==='ndr');
   document.getElementById('railRto').classList.toggle('active', module==='rto');
   document.getElementById('railReturns').classList.toggle('active', module==='returns');
-  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker' };
-  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case' };
+  document.getElementById('railWa').classList.toggle('active', module==='wa');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue' };
   document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
   document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
   if(module==='rto') renderAllRto();
   else if(module==='returns') renderAllRed();
+  else if(module==='wa') renderAllWa();
   else renderAll();
 }
 
@@ -2186,6 +2607,251 @@ function onRedSyncFailure(err){
   scheduleRedSyncSoon(15000);
 }
 
+/* ---------------- WhatsApp Issue Log drawer ---------------- */
+function openWaDrawerById(id){
+  const o = waIssues.find(x=>x.id===id);
+  if(o) openWaDrawer(o);
+}
+function openWaDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'wa';
+  const o = order;
+  const execOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.loggedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const ndrOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.remarkedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">${escapeHtml(o.phone) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+
+      <div class="role-section exec">
+        <div class="role-header exec-h"><span class="role-badge">1</span>WhatsApp Executive</div>
+        <div class="field-group">
+          <label>Logged at</label>
+          <input type="datetime-local" id="d_loggedAt" value="${o.loggedAt||''}">
+        </div>
+        <div class="field-group">
+          <label>Phone</label>
+          <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)}">
+        </div>
+        <div class="field-group">
+          <label>Issue type</label>
+          <select id="d_issueType">
+            <option value="DELAY" ${o.issueType==='DELAY'?'selected':''}>⏱ Delay</option>
+            <option value="DELIVERED" ${o.issueType==='DELIVERED'?'selected':''}>✅ Delivered</option>
+            <option value="ADDRESS_CHANGE" ${o.issueType==='ADDRESS_CHANGE'?'selected':''}>📍 Address Change</option>
+            <option value="PHONE_UPDATE" ${o.issueType==='PHONE_UPDATE'?'selected':''}>📞 Phone Update</option>
+            <option value="OTHER" ${o.issueType==='OTHER'?'selected':''}>💬 Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Customer's message</label>
+          <textarea id="d_message">${escapeHtml(o.message)}</textarea>
+        </div>
+        <div class="field-group">
+          <label>Logged by</label>
+          <select id="d_loggedBy">
+            <option value="Unassigned" ${!o.loggedBy?'selected':''}>Unassigned</option>
+            ${execOptions}
+          </select>
+        </div>
+      </div>
+
+      <div class="role-section ndr">
+        <div class="role-header ndr-h"><span class="role-badge">2</span>NDR Person</div>
+        <div class="field-group">
+          <label>Remark / action taken</label>
+          <textarea id="d_remark" placeholder="What did you do about this?">${escapeHtml(o.remark)}</textarea>
+        </div>
+        <div class="field-group">
+          <label>Remarked by</label>
+          <select id="d_remarkedBy">
+            <option value="" ${!o.remarkedBy?'selected':''}>— Not yet picked up —</option>
+            ${ndrOptions}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="d_status">
+            <option value="NEW" ${o.status==='NEW'?'selected':''}>🔁 Awaiting remark</option>
+            <option value="IN_PROGRESS" ${o.status==='IN_PROGRESS'?'selected':''}>⚙ In progress</option>
+            <option value="RESOLVED" ${o.status==='RESOLVED'?'selected':''}>✅ Resolved</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveWaDrawer()">Save changes</button>
+        <button class="btn" onclick="quickWhatsAppWa('${escapeHtml(o.id)}')">💬 Reopen WhatsApp chat</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the WhatsApp Issue Log sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  applyDrawerLockIfNeeded(o);
+}
+function saveWaDrawer(){
+  try {
+    const o = waIssues.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this issue to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(waIssues.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already exists in the WhatsApp Issue Log. Open the existing issue instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    o.loggedAt = document.getElementById('d_loggedAt').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.issueType = document.getElementById('d_issueType').value;
+    o.message = document.getElementById('d_message').value;
+    o.loggedBy = document.getElementById('d_loggedBy').value;
+    o.remark = document.getElementById('d_remark').value;
+    const remarkedBy = document.getElementById('d_remarkedBy').value;
+    if(remarkedBy && !o.remarkedAt) o.remarkedAt = TODAY.toISOString().slice(0,16);
+    if(!remarkedBy) o.remarkedAt = '';
+    o.remarkedBy = remarkedBy;
+    o.status = document.getElementById('d_status').value;
+
+    queueWaChange(o, isNewEntry);
+    saveWaIssuesCache();
+    closeDrawer();
+    renderAllWa();
+    showToast(isNewEntry ? 'Issue logged — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveWaDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  }
+}
+function openNewWaEntry(){
+  const nowStr = TODAY.toISOString().slice(0,16);
+  const blank = {id:'__new__', loggedAt:nowStr, phone:'', issueType:'DELAY', message:'', loggedBy: currentUser.displayName || 'Unassigned', remark:'', remarkedBy:'', remarkedAt:'', status:'NEW'};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'wa';
+  waIssues.push(blank);
+  openWaDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New issue';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+  const loggedAtField = document.getElementById('d_loggedAt');
+  loggedAtField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+
+  const d_idField = document.getElementById('d_id');
+  if(d_idField) d_idField.focus();
+}
+function quickWhatsAppWa(id){
+  const o = waIssues.find(x=>x.id===id);
+  if(!o) return;
+  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id}. Following up on your message — `);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.id+' yet — open the issue and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function exportWaCSV(){
+  const data = applyWaFilters();
+  const headers = ['Logged At','Order ID','Phone','Issue Type','Customer Message','Logged By','Remark','Remarked By','Status'];
+  const rows = data.map(o=>[o.loggedAt,o.id,o.phone,waTypeLabel(o.issueType),o.message,o.loggedBy,o.remark,o.remarkedBy,o.status]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'whatsapp-issue-log-export.csv';
+  a.click();
+}
+
+/* ---------------- WhatsApp Issue Log offline sync ---------------- */
+function queueWaChange(order, isNew){
+  const wasNew = waPendingChanges[order.id] && waPendingChanges[order.id].isNew;
+  waPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveWaPendingChanges();
+  updateSyncBadge();
+  scheduleWaSyncSoon(400);
+}
+function scheduleWaSyncSoon(delay){
+  clearTimeout(waSyncTimer);
+  waSyncTimer = setTimeout(attemptSyncWa, delay || 1500);
+}
+function attemptSyncWa(){
+  const ids = Object.keys(waPendingChanges);
+  if(!ids.length || waSyncInFlight || !authToken) return;
+  waSyncInFlight = true;
+  const batch = ids.map(id => waPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncWa', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      waSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleWaSyncSoon(15000);
+        return;
+      }
+      onWaSyncSuccess(res, batch);
+    })
+    .catch(err => { waSyncInFlight=false; onWaSyncFailure(err); });
+}
+function onWaSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleWaSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = waPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete waPendingChanges[orderId];
+  });
+  let hadLockedRejection = false;
+  (res.rejected||[]).forEach(r=>{
+    if(waPendingChanges[r.orderId]) delete waPendingChanges[r.orderId];
+    if(r.duplicate){
+      waIssues = waIssues.filter(o=>o.id!==r.orderId);
+    }
+    if(r.locked) hadLockedRejection = true;
+    console.warn('WhatsApp Issue Log sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = waIssues.findIndex(x=>x.id===o.id);
+    if(idx>-1) waIssues[idx] = Object.assign({}, waIssues[idx], o);
+    else waIssues.push(o);
+  });
+  saveWaPendingChanges();
+  saveWaIssuesCache();
+  lastSyncTime = new Date();
+  renderAllWa();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(hadLockedRejection) bootstrapFromServer();
+  if(Object.keys(waPendingChanges).length) scheduleWaSyncSoon(4000);
+}
+function onWaSyncFailure(err){
+  console.warn('WhatsApp Issue Log sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleWaSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -2194,7 +2860,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -2290,6 +2956,18 @@ function onBootstrapSuccess(res){
   }
   redCases = mergedRed;
 
+  // Same merge + in-progress-draft protection for the WhatsApp Issue Log module.
+  const serverWaIssues = res.waIssues || [];
+  const mergedWa = serverWaIssues.map(so => waPendingChanges[so.id] ? Object.assign({}, so, waPendingChanges[so.id].payload) : so);
+  Object.keys(waPendingChanges).forEach(id=>{
+    if(!mergedWa.find(o=>o.id===id)) mergedWa.push(waPendingChanges[id].payload);
+  });
+  const inProgressWaDraft = waIssues.find(o=>o.id==='__new__');
+  if(inProgressWaDraft && !mergedWa.find(o=>o.id==='__new__')){
+    mergedWa.push(inProgressWaDraft);
+  }
+  waIssues = mergedWa;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -2306,17 +2984,25 @@ function onBootstrapSuccess(res){
     const redSlaInput = document.getElementById('redSlaDays');
     if(redSlaInput) redSlaInput.value = initiateSlaDays;
   }
+  if(res.settings && res.settings.REMARK_SLA_HOURS){
+    remarkSlaHours = parseInt(res.settings.REMARK_SLA_HOURS,10) || 4;
+    const waSlaInput = document.getElementById('waSlaHours');
+    if(waSlaInput) waSlaInput.value = remarkSlaHours;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
   saveRtoOrdersCache();
   saveRedCasesCache();
+  saveWaIssuesCache();
   renderAll();
   renderAllRto();
   renderAllRed();
+  renderAllWa();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
+  if(Object.keys(waPendingChanges).length) attemptSyncWa();
 }
 
 function queueChange(order, isNew){
@@ -2421,7 +3107,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -2450,6 +3136,12 @@ function pushSlaSetting(){
 function pushInitiateSlaSetting(){
   if(!authToken) return;
   apiPost('setSetting', { key:'INITIATE_SLA_DAYS', value: initiateSlaDays })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushRemarkSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'REMARK_SLA_HOURS', value: remarkSlaHours })
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
@@ -2630,6 +3322,7 @@ function closeDrawer(){
   if(activeDrawerOrder==='__new__'){
     if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -2827,11 +3520,13 @@ function bindEvents(){
   document.getElementById('exportBtn').addEventListener('click', ()=>{
     if(currentModule==='rto') exportRtoCSV();
     else if(currentModule==='returns') exportRedCSV();
+    else if(currentModule==='wa') exportWaCSV();
     else exportCSV();
   });
   document.getElementById('newBtn').addEventListener('click', ()=>{
     if(currentModule==='rto') openNewRtoEntry();
     else if(currentModule==='returns') openNewRedEntry();
+    else if(currentModule==='wa') openNewWaEntry();
     else openNewEntry();
   });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
@@ -2888,23 +3583,51 @@ function bindEvents(){
     pushInitiateSlaSetting();
   });
 
+  // ---- WhatsApp Issue Log toolbar ----
+  document.getElementById('waSearchInput').addEventListener('input', e=>{ waFilters.search = e.target.value; renderWaTable(); });
+  document.getElementById('waStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#waStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    waFilters.status = chip.dataset.status;
+    renderWaTable();
+  });
+  document.getElementById('waPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    waFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderWaTable();
+  });
+  document.getElementById('waReasonFilter').addEventListener('change', e=>{ waFilters.reason = e.target.value; renderWaTable(); });
+  document.getElementById('waAgentFilter').addEventListener('change', e=>{ waFilters.agent = e.target.value; renderWaTable(); });
+  document.getElementById('waMonthFilter').addEventListener('change', e=>{ waFilters.month = e.target.value; renderWaTable(); });
+  document.getElementById('waSlaHours').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    remarkSlaHours = (v && v > 0) ? v : 4;
+    saveSettingsCache();
+    renderWaAlerts();
+    pushRemarkSlaSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
     if(activeDrawerOrder==='__new__'){
       if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
   setInterval(()=>{ if(Object.keys(redPendingChanges).length) attemptSyncRed(); }, 5000);
+  setInterval(()=>{ if(Object.keys(waPendingChanges).length) attemptSyncWa(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -2913,9 +3636,11 @@ function startApp(){
   document.getElementById('slaDays').value = slaAutoRtoDays;
   document.getElementById('rtoSlaDays').value = reshipSlaDays;
   document.getElementById('redSlaDays').value = initiateSlaDays;
+  document.getElementById('waSlaHours').value = remarkSlaHours;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
   renderAllRed();
+  renderAllWa();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
