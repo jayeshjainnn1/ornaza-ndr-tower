@@ -304,6 +304,12 @@
         <option value="agent">Agent</option>
         <option value="admin">Admin</option>
       </select>
+      <select id="nu_waTeam" title="Which WhatsApp Issue Log team this person is part of, if any">
+        <option value="">WA Log: not part of it</option>
+        <option value="exec">WA Log: WhatsApp Executive</option>
+        <option value="ndr">WA Log: NDR person</option>
+        <option value="both">WA Log: Both</option>
+      </select>
       <button class="btn btn-primary" onclick="submitNewUser()">+ Add user</button>
     </div>
     <div class="modal-close-row">
@@ -778,6 +784,20 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 let orders = [];
 let AGENTS = [];
+// WA Log's "Logged by" (exec) and "Remarked by" (NDR) dropdowns pull from
+// these instead of the full AGENTS list, so the two teams stay distinct —
+// derived from each agent's WaTeam field, set by an admin in Manage Users.
+let WA_EXEC_AGENTS = [];
+let WA_NDR_AGENTS = [];
+function computeWaTeams_(agentsList){
+  const list = Array.isArray(agentsList) ? agentsList : [];
+  const exec = list.filter(a=>a.waTeam==='exec'||a.waTeam==='both').map(a=>a.name);
+  const ndr = list.filter(a=>a.waTeam==='ndr'||a.waTeam==='both').map(a=>a.name);
+  // Nobody's been assigned a WA Log team yet — fall back to the full agent
+  // list rather than showing an empty, unusable dropdown.
+  WA_EXEC_AGENTS = exec.length ? exec : list.map(a=>a.name);
+  WA_NDR_AGENTS = ndr.length ? ndr : list.map(a=>a.name);
+}
 let slaAutoRtoDays = 5;
 let currentUser = { username:'', role:'', displayName:'' };
 let authToken = '';
@@ -862,7 +882,7 @@ function loadLocalCache(){
   try{ const o = JSON.parse(localStorage.getItem('ndr_cache_orders')||'[]'); orders = Array.isArray(o) ? o : []; }catch(e){ orders = []; }
   try{
     const a = JSON.parse(localStorage.getItem('ndr_cache_agents')||'null');
-    if(Array.isArray(a) && a.length){ AGENTS = a.map(x=>x.name); }
+    if(Array.isArray(a) && a.length){ AGENTS = a.map(x=>x.name); computeWaTeams_(a); }
   }catch(e){}
   try{
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
@@ -1997,7 +2017,7 @@ function renderWaReasonFilterOptions(){
   sel.value = waFilters.reason;
 
   const agentSel = document.getElementById('waAgentFilter');
-  const agentsInData = [...new Set([...AGENTS, ...waIssues.map(o=>o.remarkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  const agentsInData = [...new Set([...WA_NDR_AGENTS, ...waIssues.map(o=>o.remarkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
   agentSel.innerHTML = '<option value="ALL">All NDR handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = waFilters.agent;
 
@@ -2618,8 +2638,14 @@ function openWaDrawer(order){
   activeDrawerOrder = order.id;
   activeDrawerModule = 'wa';
   const o = order;
-  const execOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.loggedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
-  const ndrOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.remarkedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  // If this issue's loggedBy/remarkedBy isn't in the current WA team list
+  // (e.g. their team tag was changed after this issue was logged), still
+  // show their name as a selected option instead of silently blanking it —
+  // only actually changes if the drawer is edited and saved.
+  const execList = (o.loggedBy && !WA_EXEC_AGENTS.includes(o.loggedBy)) ? [o.loggedBy, ...WA_EXEC_AGENTS] : WA_EXEC_AGENTS;
+  const ndrList = (o.remarkedBy && !WA_NDR_AGENTS.includes(o.remarkedBy)) ? [o.remarkedBy, ...WA_NDR_AGENTS] : WA_NDR_AGENTS;
+  const execOptions = execList.map(a=>`<option value="${escapeHtml(a)}" ${o.loggedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const ndrOptions = ndrList.map(a=>`<option value="${escapeHtml(a)}" ${o.remarkedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
   const auditLine = (o.updatedBy || o.createdBy) ?
     `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
   document.getElementById('drawer').innerHTML = `
@@ -2749,7 +2775,8 @@ function saveWaDrawer(){
 }
 function openNewWaEntry(){
   const nowStr = TODAY.toISOString().slice(0,16);
-  const blank = {id:'__new__', loggedAt:nowStr, phone:'', issueType:'DELAY', message:'', loggedBy: currentUser.displayName || 'Unassigned', remark:'', remarkedBy:'', remarkedAt:'', status:'NEW'};
+  const defaultLoggedBy = WA_EXEC_AGENTS.includes(currentUser.displayName) ? currentUser.displayName : (WA_EXEC_AGENTS[0] || 'Unassigned');
+  const blank = {id:'__new__', loggedAt:nowStr, phone:'', issueType:'DELAY', message:'', loggedBy: defaultLoggedBy, remark:'', remarkedBy:'', remarkedAt:'', status:'NEW'};
   activeDrawerOrder = '__new__';
   activeDrawerModule = 'wa';
   waIssues.push(blank);
@@ -2978,7 +3005,7 @@ function onBootstrapSuccess(res){
   }
   waIssues = mergedWa;
 
-  if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); saveAgentsCache(res.agents); }
+  if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); computeWaTeams_(res.agents); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
     const slaInput = document.getElementById('slaDays');
@@ -3179,6 +3206,12 @@ function loadUsersList(){
             <div class="name">${escapeHtml(u.displayName)} <span class="role-pill">${escapeHtml(u.role)}</span>${u.active?'':' <span style="color:var(--red);font-weight:700;">(inactive)</span>'}</div>
             <div class="uname">@${escapeHtml(u.username)}</div>
           </div>
+          <select style="font-size:11.5px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);" title="WhatsApp Issue Log team" onchange="updateUserWaTeam('${escapeHtml(u.username)}', this.value)">
+            <option value="" ${!u.waTeam?'selected':''}>WA Log: none</option>
+            <option value="exec" ${u.waTeam==='exec'?'selected':''}>WA Log: Executive</option>
+            <option value="ndr" ${u.waTeam==='ndr'?'selected':''}>WA Log: NDR</option>
+            <option value="both" ${u.waTeam==='both'?'selected':''}>WA Log: Both</option>
+          </select>
           ${u.active && u.username.toLowerCase() !== currentUser.username.toLowerCase() ? `<button class="mini-btn" onclick="deactivateUserRow('${escapeHtml(u.username)}')">Remove</button>` : ''}
         </div>
       `).join('') || '<div style="color:var(--slate-soft);font-size:12.5px;">No users yet.</div>';
@@ -3190,17 +3223,29 @@ function submitNewUser(){
   const password = document.getElementById('nu_password').value;
   const displayName = document.getElementById('nu_displayName').value.trim();
   const role = document.getElementById('nu_role').value;
+  const waTeam = document.getElementById('nu_waTeam').value;
   if(!username || !password){ showToast('Username and a temporary password are required.', 'error'); return; }
-  apiPost('createUser', { username, password, displayName, role })
+  apiPost('createUser', { username, password, displayName, role, waTeam })
     .then(res=>{
       if(!checkAuthResult(res)) return;
       if(!res.ok){ showToast(res.error || 'Could not add user.', 'error'); return; }
       document.getElementById('nu_username').value = '';
       document.getElementById('nu_password').value = '';
       document.getElementById('nu_displayName').value = '';
+      document.getElementById('nu_waTeam').value = '';
       loadUsersList();
       bootstrapFromServer(); // refresh the Agent dropdown with the new person
       showToast('User added.', 'success');
+    })
+    .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
+}
+function updateUserWaTeam(username, waTeam){
+  apiPost('setUserWaTeam', { username, waTeam })
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      if(!res.ok){ showToast(res.error || 'Could not update WA Log team.', 'error'); return; }
+      bootstrapFromServer(); // refresh the WA Log exec/NDR dropdowns
+      showToast('WA Log team updated for @'+username+'.', 'success');
     })
     .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
 }
