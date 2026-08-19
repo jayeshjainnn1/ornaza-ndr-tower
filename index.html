@@ -2729,7 +2729,9 @@ function openWaDrawer(order){
   `;
   document.getElementById('drawer').classList.add('show');
   document.getElementById('overlay').classList.add('show');
-  applyDrawerLockIfNeeded(o);
+  // No applyDrawerLockIfNeeded() call here on purpose — this module is a
+  // two-person handoff (exec logs it, NDR person remarks on it), so it
+  // should stay editable by anyone signed in, not just whoever created it.
 }
 function saveWaDrawer(){
   try {
