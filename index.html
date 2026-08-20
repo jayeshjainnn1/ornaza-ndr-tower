@@ -351,6 +351,12 @@
       WA Log
       <span class="tag">WhatsApp Issue Log — live</span>
     </div>
+    <div class="rail-item" id="railDispatch" onclick="switchModule('dispatch')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+      Dispatch
+      <span class="tag">New Item Dispatch Log — live</span>
+    </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
       Setup
@@ -762,6 +768,86 @@
     </div>
     </div>
     <!-- ================= /WHATSAPP ISSUE LOG MODULE ================= -->
+
+    <!-- ================= NEW ITEM DISPATCH LOG MODULE ================= -->
+    <div id="dispatchView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="dispatchStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>⚠ Action needed — not yet delivered</h3>
+        <div class="sla-config">
+          <label for="dispatchSlaDays">Flag entries still open after</label>
+          <input type="number" id="dispatchSlaDays" min="1" max="30" value="3">
+          <span>day(s) of being logged</span>
+        </div>
+        <span id="dispatchAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="dispatchAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>Reason breakdown</h3>
+        <div id="dispatchReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What this is telling you</h3>
+        <div id="dispatchInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- DAY-WISE VOLUME -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Day-wise volume</h3>
+      <div id="dispatchMonthlyBreakdown"></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="dispatchSearchInput" placeholder="Search Order ID, phone, tracking number or SKU…">
+      </div>
+      <div class="chip-group" id="dispatchStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="PENDING">Pending</div>
+        <div class="chip" data-status="DISPATCHED">Dispatched</div>
+        <div class="chip" data-status="DELIVERED">Delivered</div>
+      </div>
+      <div class="chip-group" id="dispatchPrioChips">
+        <div class="chip" data-prio="HIGH">⚠ Overdue only</div>
+      </div>
+      <select class="reason-filter" id="dispatchMonthFilter"><option value="ALL">All days</option></select>
+      <select class="reason-filter" id="dispatchReasonFilter"><option value="ALL">All reasons</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>Phone</th>
+            <th>Reason</th>
+            <th>New SKU Detail</th>
+            <th>Tracking Number</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="dispatchTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="dispatchEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No entries match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /NEW ITEM DISPATCH LOG MODULE ================= -->
   </main>
 </div>
 
@@ -871,6 +957,26 @@ function hoursSinceWa_(iso){
 }
 function hoursOverdueWa_(o){ return hoursSinceWa_(o.loggedAt) - remarkSlaHours; }
 
+/* ---------------- New Item Dispatch Log module state ----------------
+   Order ID can legitimately repeat here (e.g. a damage claim shipped as two
+   separate replacement packages), so each entry's o.id is a generated
+   unique key (like every other module's o.id) while o.orderId is the
+   plain, non-unique Order ID text field. Reuses typeLabel() for the reason
+   dropdown (RETURN/EXCHANGE/DAMAGE/MISSING already covered there). */
+let dispatchEntries = [];
+let dispatchOpenSlaDays = 3;
+let dispatchPendingChanges = {};
+let dispatchSyncInFlight = false;
+let dispatchSyncTimer = null;
+let dispatchFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function daysSinceLoggedDispatch_(o){
+  if(!o.date) return 0;
+  const d = parseD(o.date);
+  if(!d || isNaN(d.getTime())) return 0;
+  return Math.floor((TODAY - d)/(1000*60*60*24));
+}
+function daysOverdueDispatch_(o){ return daysSinceLoggedDispatch_(o) - dispatchOpenSlaDays; }
+
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
 function monthLabel(key){
   const [y,m] = key.split('-');
@@ -907,6 +1013,12 @@ function loadLocalCache(){
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.REMARK_SLA_HOURS) remarkSlaHours = parseInt(s.REMARK_SLA_HOURS,10) || 4;
   }catch(e){}
+  try{ const de = JSON.parse(localStorage.getItem('ndr_cache_dispatch_entries')||'[]'); dispatchEntries = Array.isArray(de) ? de : []; }catch(e){ dispatchEntries = []; }
+  try{ dispatchPendingChanges = JSON.parse(localStorage.getItem('ndr_dispatch_pending_changes')||'{}'); }catch(e){ dispatchPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.DISPATCH_SLA_DAYS) dispatchOpenSlaDays = parseInt(s.DISPATCH_SLA_DAYS,10) || 3;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -915,7 +1027,7 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
@@ -923,6 +1035,8 @@ function saveRedCasesCache(){ localStorage.setItem('ndr_cache_red_cases', JSON.s
 function saveRedPendingChanges(){ localStorage.setItem('ndr_red_pending_changes', JSON.stringify(redPendingChanges)); }
 function saveWaIssuesCache(){ localStorage.setItem('ndr_cache_wa_issues', JSON.stringify(waIssues)); }
 function saveWaPendingChanges(){ localStorage.setItem('ndr_wa_pending_changes', JSON.stringify(waPendingChanges)); }
+function saveDispatchEntriesCache(){ localStorage.setItem('ndr_cache_dispatch_entries', JSON.stringify(dispatchEntries)); }
+function saveDispatchPendingChanges(){ localStorage.setItem('ndr_dispatch_pending_changes', JSON.stringify(dispatchPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -2069,23 +2183,230 @@ function renderAllWa(){
 }
 
 /* ---------------- module switching (rail nav) ---------------- */
+/* ============================================================================
+   NEW ITEM DISPATCH LOG — fifth module. Order ID can repeat (multiple
+   packages against the same order), so the table/drawer/filters all key
+   off o.id (the generated unique entry id) exactly like every other
+   module, with o.orderId as a plain, non-unique text field alongside it.
+   No leaderboard panel — there's no per-agent ownership concept here.
+   ============================================================================ */
+function computeDispatchStats(data){
+  const total = data.length;
+  const pending = data.filter(o=>o.status==='PENDING').length;
+  const dispatched = data.filter(o=>o.status==='DISPATCHED').length;
+  const delivered = data.filter(o=>o.status==='DELIVERED').length;
+  const rate = total ? Math.round((delivered/total)*100) : 0;
+  return {total, pending, dispatched, delivered, rate};
+}
+function renderDispatchStats(){
+  const s = computeDispatchStats(dispatchEntries);
+  document.getElementById('dispatchStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Entries</div><div class="value">${s.total}</div><div class="sub">logged</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">no tracking yet</div></div>
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Dispatched 🚚</div><div class="value">${s.dispatched}</div><div class="sub">on the way</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Delivered ✅</div><div class="value">${s.delivered}</div><div class="sub">confirmed received</div></div>
+    <div class="stat-card rate"><div class="label">Delivery Rate</div><div class="value">${s.rate}%</div><div class="sub">delivered ÷ total</div></div>
+  `;
+}
+function renderDispatchAlerts(){
+  const urgent = dispatchEntries.filter(o=> o.status!=='DELIVERED' && daysOverdueDispatch_(o) >= 0)
+                        .sort((a,b)=> daysOverdueDispatch_(b)-daysOverdueDispatch_(a));
+  document.getElementById('dispatchAlertCount').textContent = urgent.length ? `${urgent.length} entr${urgent.length>1?'ies':'y'} at risk` : '';
+  const box = document.getElementById('dispatchAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing overdue — every open entry is still within ${dispatchOpenSlaDays} days.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const over = daysOverdueDispatch_(o);
+    const waitingOn = o.status==='PENDING' ? 'still needs a tracking number' : 'still in transit — verify tracking';
+    return `
+    <div class="alert-card">
+      <div class="oid mono">${escapeHtml(o.orderId)}</div>
+      <div class="reason">${typeLabel(o.reason)} · ${o.sku ? escapeHtml(o.sku) : 'no SKU on file'}</div>
+      <div class="stale">${over} day${over===1?'':'s'} overdue — ${waitingOn}</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openDispatchDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppDispatch('${escapeHtml(o.id)}')">WhatsApp</button>
+        ${o.trackingLink ? `<button class="mini-btn" onclick="window.open('${escapeHtml(o.trackingLink)}','_blank')">Track</button>` : ''}
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeDispatchReasonBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.reason || 'Unspecified';
+    if(!map[r]) map[r] = {reason:r, count:0, delivered:0, open:0};
+    map[r].count++;
+    if(o.status==='DELIVERED') map[r].delivered++; else map[r].open++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function computeDispatchSkuIssues(data){
+  const map = {};
+  data.forEach(o=>{
+    (o.sku||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(sku=>{
+      if(!map[sku]) map[sku] = {sku, count:0, orders:[]};
+      map[sku].count++;
+      map[sku].orders.push(o.orderId);
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderDispatchReasonChart(){
+  const breakdown = computeDispatchReasonBreakdown(dispatchEntries);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('dispatchReasonChart').innerHTML = breakdown.map(b=>{
+    const openRate = b.count ? Math.round((b.open/b.count)*100) : 0;
+    const isLeak = openRate >= 60 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${typeLabel(b.reason)}">${typeLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${openRate}% open</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const skuIssues = computeDispatchSkuIssues(dispatchEntries).filter(s=>s.count>=2);
+  let callouts = '';
+  if(skuIssues.length){
+    skuIssues.forEach(s=>{
+      callouts += `<div class="callout"><b>${escapeHtml(s.sku)}</b> has come up ${s.count} times in this log (${escapeHtml(s.orders.join(', '))}) — worth a QC look at this SKU.</div>`;
+    });
+  } else {
+    callouts = `<div class="callout">No SKU has repeated yet in this batch.</div>`;
+  }
+  const topReason = breakdown[0];
+  if(topReason){
+    callouts += `<div class="callout"><b>${typeLabel(topReason.reason)}</b> is your most common reason for a new entry (${topReason.count} cases).</div>`;
+  }
+  document.getElementById('dispatchInsightCallouts').innerHTML = callouts;
+}
+function computeDispatchDailyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = o.date || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, delivered:0, open:0};
+    map[k].total++;
+    if(o.status==='DELIVERED') map[k].delivered++; else map[k].open++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderDispatchMonthlyBreakdown(){
+  const days = computeDispatchDailyBreakdown(dispatchEntries);
+  let prevRate = null;
+  const rows = days.map(m=>{
+    const rate = m.total ? Math.round((m.delivered/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':fmtDate(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.delivered} ✅</div>
+        <div style="color:var(--amber)">${m.open} 🔁</div>
+        <div></div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('dispatchMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Day</div><div>Total</div><div>Delivered</div><div>Open</div><div></div><div>Delivery</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated entries yet.</div>'}
+  `;
+}
+function applyDispatchFilters(){
+  return dispatchEntries.filter(o=>{
+    if(dispatchFilters.status!=='ALL' && o.status!==dispatchFilters.status) return false;
+    if(dispatchFilters.priority==='HIGH' && !(o.status!=='DELIVERED' && daysOverdueDispatch_(o)>=0)) return false;
+    if(dispatchFilters.reason!=='ALL' && o.reason!==dispatchFilters.reason) return false;
+    if(dispatchFilters.month!=='ALL' && o.date!==dispatchFilters.month) return false;
+    if(dispatchFilters.search){
+      const s = dispatchFilters.search.toLowerCase();
+      const hay = `${o.orderId} ${o.trackingNumber} ${o.sku} ${o.phone}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderDispatchReasonFilterOptions(){
+  const sel = document.getElementById('dispatchReasonFilter');
+  const reasons = [...new Set(dispatchEntries.map(o=>o.reason).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All reasons</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${typeLabel(r)}</option>`).join('');
+  sel.value = dispatchFilters.reason;
+
+  const monthSel = document.getElementById('dispatchMonthFilter');
+  const daysInData = [...new Set(dispatchEntries.map(o=>o.date).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All days</option>' + daysInData.map(k=>`<option value="${k}">${fmtDate(k).replace(/<[^>]+>/g,'')}</option>`).join('');
+  monthSel.value = dispatchFilters.month;
+}
+function dispatchStatusStamp(status){
+  if(status==='DELIVERED') return `<span class="stamp delivered">✓ DELIVERED</span>`;
+  if(status==='DISPATCHED') return `<span class="stamp pending">🚚 DISPATCHED</span>`;
+  return `<span class="stamp rto">🔁 PENDING</span>`;
+}
+function renderDispatchTable(){
+  const data = applyDispatchFilters();
+  const body = document.getElementById('dispatchTableBody');
+  document.getElementById('dispatchEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>`
+    <tr onclick="openDispatchDrawerById('${escapeHtml(o.id)}')">
+      <td>${fmtDate(o.date)}</td>
+      <td class="oid-cell">${escapeHtml(o.orderId)}${dispatchPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.phone) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${typeLabel(o.reason)}</td>
+      <td class="awb-cell">${escapeHtml(o.sku) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td class="awb-cell">${escapeHtml(o.trackingNumber) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${dispatchStatusStamp(o.status)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="Send details on WhatsApp" onclick="quickWhatsAppDispatch('${escapeHtml(o.id)}')">💬</div>
+          ${o.trackingLink ? `<div class="icon-btn" title="Track shipment" onclick="window.open('${escapeHtml(o.trackingLink)}','_blank')">🔗</div>` : ''}
+          <div class="icon-btn" title="Open" onclick="openDispatchDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+function renderAllDispatch(){
+  renderDispatchStats();
+  renderDispatchAlerts();
+  renderDispatchReasonChart();
+  renderDispatchMonthlyBreakdown();
+  renderDispatchReasonFilterOptions();
+  renderDispatchTable();
+  updateSyncBadge();
+}
+
+/* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
   document.getElementById('ndrView').style.display = module==='ndr' ? '' : 'none';
   document.getElementById('rtoView').style.display = module==='rto' ? '' : 'none';
   document.getElementById('returnsView').style.display = module==='returns' ? '' : 'none';
   document.getElementById('waView').style.display = module==='wa' ? '' : 'none';
+  document.getElementById('dispatchView').style.display = module==='dispatch' ? '' : 'none';
   document.getElementById('railNdr').classList.toggle('active', module==='ndr');
   document.getElementById('railRto').classList.toggle('active', module==='rto');
   document.getElementById('railReturns').classList.toggle('active', module==='returns');
   document.getElementById('railWa').classList.toggle('active', module==='wa');
-  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log' };
-  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue' };
+  document.getElementById('railDispatch').classList.toggle('active', module==='dispatch');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch' };
   document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
   document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
   if(module==='rto') renderAllRto();
   else if(module==='returns') renderAllRed();
   else if(module==='wa') renderAllWa();
+  else if(module==='dispatch') renderAllDispatch();
   else renderAll();
 }
 
@@ -2891,6 +3212,223 @@ function onWaSyncFailure(err){
   scheduleWaSyncSoon(15000);
 }
 
+/* ---------------- New Item Dispatch Log drawer + offline sync ---------------- */
+function openDispatchDrawerById(id){
+  const o = dispatchEntries.find(x=>x.id===id);
+  if(o) openDispatchDrawer(o);
+}
+function openDispatchDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'dispatch';
+  const o = order;
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.orderId) || 'New dispatch'}</h2>
+        <div class="awb mono" id="drawerSubtitle">${escapeHtml(o.phone) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+
+      <div class="field-group">
+        <label>Order ID</label>
+        <input id="d_orderId" placeholder="OZ00000" value="${escapeHtml(o.orderId)}">
+      </div>
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" id="d_date" value="${o.date||''}" onpaste="handleDatePaste(event,this)">
+      </div>
+      <div class="field-group">
+        <label>Phone</label>
+        <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)}">
+      </div>
+      <div class="field-group">
+        <label>Reason</label>
+        <select id="d_reason">
+          <option value="RETURN" ${o.reason==='RETURN'?'selected':''}>Return</option>
+          <option value="EXCHANGE" ${o.reason==='EXCHANGE'?'selected':''}>Exchange</option>
+          <option value="DAMAGE" ${o.reason==='DAMAGE'?'selected':''}>Damage</option>
+          <option value="MISSING" ${o.reason==='MISSING'?'selected':''}>Missing</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>New SKU detail</label>
+        <input id="d_sku" placeholder="e.g. RING-24, EARRING-08" value="${escapeHtml(o.sku)}">
+      </div>
+      <div class="field-group">
+        <label>Tracking number</label>
+        <input id="d_trackingNumber" placeholder="AWB / tracking number" value="${escapeHtml(o.trackingNumber)}">
+      </div>
+      <div class="field-group">
+        <label>Tracking link</label>
+        <input id="d_trackingLink" placeholder="https://..." value="${escapeHtml(o.trackingLink)}">
+      </div>
+      <div class="field-group">
+        <label>Status</label>
+        <select id="d_status">
+          <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
+          <option value="DISPATCHED" ${o.status==='DISPATCHED'?'selected':''}>🚚 Dispatched</option>
+          <option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>✅ Delivered</option>
+        </select>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveDispatchDrawer()">Save changes</button>
+        <button class="btn" onclick="quickWhatsAppDispatch('${escapeHtml(o.id)}')">💬 WhatsApp customer</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the Dispatch Log sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  // No applyDrawerLockIfNeeded() call here on purpose — same reasoning as
+  // the WhatsApp Issue Log: whoever is on dispatch duty that day should be
+  // able to update tracking/status regardless of who logged the entry.
+}
+function saveDispatchDrawer(){
+  try {
+    const o = dispatchEntries.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+    const orderIdVal = document.getElementById('d_orderId').value.trim();
+    if(!orderIdVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+    if(isNewEntry){
+      o.id = 'DSP-' + uuidShort();
+    }
+    o.orderId = orderIdVal;
+    o.date = document.getElementById('d_date').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.reason = document.getElementById('d_reason').value;
+    o.sku = document.getElementById('d_sku').value;
+    o.trackingNumber = document.getElementById('d_trackingNumber').value;
+    o.trackingLink = document.getElementById('d_trackingLink').value;
+    o.status = document.getElementById('d_status').value;
+
+    queueDispatchChange(o, isNewEntry);
+    saveDispatchEntriesCache();
+    closeDrawer();
+    renderAllDispatch();
+    showToast(isNewEntry ? 'Dispatch entry logged — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveDispatchDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  }
+}
+function openNewDispatchEntry(){
+  const todayStr = TODAY.toISOString().slice(0,10);
+  const blank = {id:'__new__', orderId:'', date:todayStr, phone:'', reason:'RETURN', sku:'', trackingNumber:'', trackingLink:'', status:'PENDING'};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'dispatch';
+  dispatchEntries.push(blank);
+  openDispatchDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New dispatch entry';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+  const orderIdField = document.getElementById('d_orderId');
+  if(orderIdField) orderIdField.focus();
+}
+function quickWhatsAppDispatch(id){
+  const o = dispatchEntries.find(x=>x.id===id);
+  if(!o) return;
+  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.orderId}. Following up on your ${typeLabel(o.reason).toLowerCase()} dispatch — `);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.orderId+' yet — open the entry and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function exportDispatchCSV(){
+  const data = applyDispatchFilters();
+  const headers = ['Date','Order ID','Phone','Reason','New SKU Detail','Tracking Number','Tracking Link','Status'];
+  const rows = data.map(o=>[o.date,o.orderId,o.phone,typeLabel(o.reason),o.sku,o.trackingNumber,o.trackingLink,o.status]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dispatch-log-export.csv';
+  a.click();
+}
+function queueDispatchChange(order, isNew){
+  const wasNew = dispatchPendingChanges[order.id] && dispatchPendingChanges[order.id].isNew;
+  dispatchPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveDispatchPendingChanges();
+  updateSyncBadge();
+  scheduleDispatchSyncSoon(400);
+}
+function scheduleDispatchSyncSoon(delay){
+  clearTimeout(dispatchSyncTimer);
+  dispatchSyncTimer = setTimeout(attemptSyncDispatch, delay || 1500);
+}
+function attemptSyncDispatch(){
+  const ids = Object.keys(dispatchPendingChanges);
+  if(!ids.length || dispatchSyncInFlight || !authToken) return;
+  dispatchSyncInFlight = true;
+  const batch = ids.map(id => dispatchPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncDispatch', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      dispatchSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleDispatchSyncSoon(15000);
+        return;
+      }
+      onDispatchSyncSuccess(res, batch);
+    })
+    .catch(err => { dispatchSyncInFlight=false; onDispatchSyncFailure(err); });
+}
+function onDispatchSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleDispatchSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = dispatchPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete dispatchPendingChanges[orderId];
+  });
+  (res.rejected||[]).forEach(r=>{
+    if(dispatchPendingChanges[r.orderId]) delete dispatchPendingChanges[r.orderId];
+    if(r.duplicate){
+      dispatchEntries = dispatchEntries.filter(o=>o.id!==r.orderId);
+    }
+    console.warn('Dispatch Log sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = dispatchEntries.findIndex(x=>x.id===o.id);
+    if(idx>-1) dispatchEntries[idx] = Object.assign({}, dispatchEntries[idx], o);
+    else dispatchEntries.push(o);
+  });
+  saveDispatchPendingChanges();
+  saveDispatchEntriesCache();
+  lastSyncTime = new Date();
+  renderAllDispatch();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(Object.keys(dispatchPendingChanges).length) scheduleDispatchSyncSoon(4000);
+}
+function onDispatchSyncFailure(err){
+  console.warn('Dispatch Log sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleDispatchSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -2899,7 +3437,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -3007,6 +3545,18 @@ function onBootstrapSuccess(res){
   }
   waIssues = mergedWa;
 
+  // Same merge + in-progress-draft protection for the New Item Dispatch Log module.
+  const serverDispatchEntries = res.dispatchEntries || [];
+  const mergedDispatch = serverDispatchEntries.map(so => dispatchPendingChanges[so.id] ? Object.assign({}, so, dispatchPendingChanges[so.id].payload) : so);
+  Object.keys(dispatchPendingChanges).forEach(id=>{
+    if(!mergedDispatch.find(o=>o.id===id)) mergedDispatch.push(dispatchPendingChanges[id].payload);
+  });
+  const inProgressDispatchDraft = dispatchEntries.find(o=>o.id==='__new__');
+  if(inProgressDispatchDraft && !mergedDispatch.find(o=>o.id==='__new__')){
+    mergedDispatch.push(inProgressDispatchDraft);
+  }
+  dispatchEntries = mergedDispatch;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); computeWaTeams_(res.agents); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -3028,20 +3578,28 @@ function onBootstrapSuccess(res){
     const waSlaInput = document.getElementById('waSlaHours');
     if(waSlaInput) waSlaInput.value = remarkSlaHours;
   }
+  if(res.settings && res.settings.DISPATCH_SLA_DAYS){
+    dispatchOpenSlaDays = parseInt(res.settings.DISPATCH_SLA_DAYS,10) || 3;
+    const dispatchSlaInput = document.getElementById('dispatchSlaDays');
+    if(dispatchSlaInput) dispatchSlaInput.value = dispatchOpenSlaDays;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
   saveRtoOrdersCache();
   saveRedCasesCache();
   saveWaIssuesCache();
+  saveDispatchEntriesCache();
   renderAll();
   renderAllRto();
   renderAllRed();
   renderAllWa();
+  renderAllDispatch();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
   if(Object.keys(waPendingChanges).length) attemptSyncWa();
+  if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch();
 }
 
 function queueChange(order, isNew){
@@ -3146,7 +3704,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -3181,6 +3739,12 @@ function pushInitiateSlaSetting(){
 function pushRemarkSlaSetting(){
   if(!authToken) return;
   apiPost('setSetting', { key:'REMARK_SLA_HOURS', value: remarkSlaHours })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushDispatchSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'DISPATCH_SLA_DAYS', value: dispatchOpenSlaDays })
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
@@ -3380,6 +3944,7 @@ function closeDrawer(){
     if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -3578,12 +4143,14 @@ function bindEvents(){
     if(currentModule==='rto') exportRtoCSV();
     else if(currentModule==='returns') exportRedCSV();
     else if(currentModule==='wa') exportWaCSV();
+    else if(currentModule==='dispatch') exportDispatchCSV();
     else exportCSV();
   });
   document.getElementById('newBtn').addEventListener('click', ()=>{
     if(currentModule==='rto') openNewRtoEntry();
     else if(currentModule==='returns') openNewRedEntry();
     else if(currentModule==='wa') openNewWaEntry();
+    else if(currentModule==='dispatch') openNewDispatchEntry();
     else openNewEntry();
   });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
@@ -3666,6 +4233,31 @@ function bindEvents(){
     pushRemarkSlaSetting();
   });
 
+  // ---- New Item Dispatch Log toolbar ----
+  document.getElementById('dispatchSearchInput').addEventListener('input', e=>{ dispatchFilters.search = e.target.value; renderDispatchTable(); });
+  document.getElementById('dispatchStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#dispatchStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    dispatchFilters.status = chip.dataset.status;
+    renderDispatchTable();
+  });
+  document.getElementById('dispatchPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    dispatchFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderDispatchTable();
+  });
+  document.getElementById('dispatchReasonFilter').addEventListener('change', e=>{ dispatchFilters.reason = e.target.value; renderDispatchTable(); });
+  document.getElementById('dispatchMonthFilter').addEventListener('change', e=>{ dispatchFilters.month = e.target.value; renderDispatchTable(); });
+  document.getElementById('dispatchSlaDays').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    dispatchOpenSlaDays = (v && v > 0) ? v : 3;
+    saveSettingsCache();
+    renderDispatchAlerts();
+    pushDispatchSlaSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
@@ -3673,18 +4265,20 @@ function bindEvents(){
       if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
   setInterval(()=>{ if(Object.keys(redPendingChanges).length) attemptSyncRed(); }, 5000);
   setInterval(()=>{ if(Object.keys(waPendingChanges).length) attemptSyncWa(); }, 5000);
+  setInterval(()=>{ if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -3694,10 +4288,12 @@ function startApp(){
   document.getElementById('rtoSlaDays').value = reshipSlaDays;
   document.getElementById('redSlaDays').value = initiateSlaDays;
   document.getElementById('waSlaHours').value = remarkSlaHours;
+  document.getElementById('dispatchSlaDays').value = dispatchOpenSlaDays;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
   renderAllRed();
   renderAllWa();
+  renderAllDispatch();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
