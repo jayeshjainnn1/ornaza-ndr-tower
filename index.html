@@ -968,6 +968,11 @@ let dispatchOpenSlaDays = 3;
 let dispatchPendingChanges = {};
 let dispatchSyncInFlight = false;
 let dispatchSyncTimer = null;
+// Guards against a single tap creating two rows — some phones/PWA contexts
+// fire a duplicate click event for one tap ("ghost click"). Without this,
+// a second overlapping call to saveDispatchDrawer() could slip through
+// before the first one closes the drawer, generating a second EntryID.
+let dispatchSaveInFlight = false;
 let dispatchFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
 function daysSinceLoggedDispatch_(o){
   if(!o.date) return 0;
@@ -3236,7 +3241,8 @@ function openDispatchDrawer(order){
 
       <div class="field-group">
         <label>Order ID</label>
-        <input id="d_orderId" placeholder="OZ00000" value="${escapeHtml(o.orderId)}">
+        <input id="d_orderId" placeholder="OZ00000" value="${escapeHtml(o.orderId)}" oninput="checkDispatchOrderIdDupe()">
+        <div id="d_orderIdHint" style="display:none;font-size:11.5px;color:var(--amber);margin-top:5px;line-height:1.4;"></div>
       </div>
       <div class="field-group">
         <label>Date</label>
@@ -3289,8 +3295,31 @@ function openDispatchDrawer(order){
   // No applyDrawerLockIfNeeded() call here on purpose — same reasoning as
   // the WhatsApp Issue Log: whoever is on dispatch duty that day should be
   // able to update tracking/status regardless of who logged the entry.
+  checkDispatchOrderIdDupe();
+}
+// Live, non-blocking hint (not a confirm()/alert() — those can be invisible
+// in installed PWA contexts) shown as the Order ID is typed, so an agent
+// can see at a glance that this order already has an entry before saving
+// a second one by mistake.
+function checkDispatchOrderIdDupe(){
+  const hint = document.getElementById('d_orderIdHint');
+  const field = document.getElementById('d_orderId');
+  if(!hint || !field) return;
+  const val = field.value.trim().toLowerCase();
+  if(!val){ hint.style.display = 'none'; return; }
+  const others = dispatchEntries.filter(x=>x.id!==activeDrawerOrder && x.id!=='__new__' && (x.orderId||'').trim().toLowerCase()===val);
+  if(others.length){
+    hint.style.display = 'block';
+    hint.innerHTML = `⚠ ${others.length} existing entr${others.length>1?'ies':'y'} already logged for this Order ID — ` +
+      others.map(o=>`${fmtDate(o.date)} · ${typeLabel(o.reason)} · ${o.status}`).join(', ') +
+      `. Make sure this is a genuinely separate package before saving.`;
+  } else {
+    hint.style.display = 'none';
+  }
 }
 function saveDispatchDrawer(){
+  if(dispatchSaveInFlight) return; // swallow a duplicate/ghost click instead of creating a second row
+  dispatchSaveInFlight = true;
   try {
     const o = dispatchEntries.find(x=>x.id===activeDrawerOrder);
     if(!o){
@@ -3300,17 +3329,42 @@ function saveDispatchDrawer(){
     const isNewEntry = activeDrawerOrder === '__new__';
     const orderIdVal = document.getElementById('d_orderId').value.trim();
     if(!orderIdVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+    const dateVal = document.getElementById('d_date').value;
+    const phoneVal = document.getElementById('d_phone').value;
+    const reasonVal = document.getElementById('d_reason').value;
+    const skuVal = document.getElementById('d_sku').value;
+    const trackingNumberVal = document.getElementById('d_trackingNumber').value;
+    const trackingLinkVal = document.getElementById('d_trackingLink').value;
+    const statusVal = document.getElementById('d_status').value;
+
     if(isNewEntry){
+      // Exact-duplicate guard: same Order ID + date + reason + SKU + tracking
+      // number as an entry that already exists. This is what was slipping
+      // through silently before — Order ID is allowed to repeat by design
+      // (multiple real packages), but a byte-for-byte match almost always
+      // means the same entry got saved twice, not a second package.
+      const exactDupe = dispatchEntries.find(x =>
+        x.id !== '__new__' &&
+        (x.orderId||'').trim().toLowerCase() === orderIdVal.toLowerCase() &&
+        (x.date||'') === dateVal &&
+        (x.reason||'') === reasonVal &&
+        (x.sku||'').trim().toLowerCase() === skuVal.trim().toLowerCase() &&
+        (x.trackingNumber||'').trim().toLowerCase() === trackingNumberVal.trim().toLowerCase()
+      );
+      if(exactDupe){
+        showDrawerError(`This looks identical to an entry already logged for ${orderIdVal} on ${fmtDate(exactDupe.date)} (${typeLabel(exactDupe.reason)}) — if this is really a separate package, change something like the tracking number before saving. Otherwise close this and open the existing entry instead.`);
+        return;
+      }
       o.id = 'DSP-' + uuidShort();
     }
     o.orderId = orderIdVal;
-    o.date = document.getElementById('d_date').value;
-    o.phone = document.getElementById('d_phone').value;
-    o.reason = document.getElementById('d_reason').value;
-    o.sku = document.getElementById('d_sku').value;
-    o.trackingNumber = document.getElementById('d_trackingNumber').value;
-    o.trackingLink = document.getElementById('d_trackingLink').value;
-    o.status = document.getElementById('d_status').value;
+    o.date = dateVal;
+    o.phone = phoneVal;
+    o.reason = reasonVal;
+    o.sku = skuVal;
+    o.trackingNumber = trackingNumberVal;
+    o.trackingLink = trackingLinkVal;
+    o.status = statusVal;
 
     queueDispatchChange(o, isNewEntry);
     saveDispatchEntriesCache();
@@ -3320,6 +3374,8 @@ function saveDispatchDrawer(){
   } catch(err){
     console.error('saveDispatchDrawer failed:', err);
     showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  } finally {
+    dispatchSaveInFlight = false;
   }
 }
 function openNewDispatchEntry(){
