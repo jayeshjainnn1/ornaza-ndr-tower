@@ -3828,6 +3828,10 @@ function loadUsersList(){
             <div class="name">${escapeHtml(u.displayName)} <span class="role-pill">${escapeHtml(u.role)}</span>${u.active?'':' <span style="color:var(--red);font-weight:700;">(inactive)</span>'}</div>
             <div class="uname">@${escapeHtml(u.username)}</div>
           </div>
+          <select style="font-size:11.5px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);" title="Role" ${u.username.toLowerCase()===currentUser.username.toLowerCase()?'disabled':''} onchange="updateUserRole('${escapeHtml(u.username)}', this.value)">
+            <option value="agent" ${u.role==='agent'?'selected':''}>Agent</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          </select>
           <select style="font-size:11.5px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);" title="WhatsApp Issue Log team" onchange="updateUserWaTeam('${escapeHtml(u.username)}', this.value)">
             <option value="" ${!u.waTeam?'selected':''}>WA Log: none</option>
             <option value="exec" ${u.waTeam==='exec'?'selected':''}>WA Log: Executive</option>
@@ -3868,6 +3872,16 @@ function updateUserWaTeam(username, waTeam){
       if(!res.ok){ showToast(res.error || 'Could not update WA Log team.', 'error'); return; }
       bootstrapFromServer(); // refresh the WA Log exec/NDR dropdowns
       showToast('WA Log team updated for @'+username+'.', 'success');
+    })
+    .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
+}
+function updateUserRole(username, role){
+  apiPost('setUserRole', { username, role })
+    .then(res=>{
+      if(!checkAuthResult(res)) return;
+      if(!res.ok){ showToast(res.error || 'Could not update role.', 'error'); loadUsersList(); return; }
+      loadUsersList();
+      showToast('Role updated for @'+username+'.', 'success');
     })
     .catch(()=>showToast("Couldn't reach the server — try again once you're online.", 'error'));
 }
