@@ -544,6 +544,7 @@
         <div class="chip" data-status="PENDING">Pending reship</div>
         <div class="chip" data-status="RESHIPPED">Reshipped</div>
         <div class="chip" data-status="DELIVERED">Delivered</div>
+        <div class="chip" data-status="RTO_AGAIN">RTO Again</div>
         <div class="chip" data-status="REFUNDED">Refunded</div>
       </div>
       <div class="chip-group" id="rtoPrioChips">
@@ -1420,10 +1421,11 @@ function computeRtoStats(data){
   const reshipped = data.filter(o=>o.status==='RESHIPPED').length;
   const delivered = data.filter(o=>o.status==='DELIVERED').length;
   const pending = data.filter(o=>o.status==='PENDING').length;
+  const rtoAgain = data.filter(o=>o.status==='RTO_AGAIN').length;
   const refunded = data.filter(o=>o.status==='REFUNDED').length;
   const decided = reshipped + delivered + refunded;
   const rate = decided ? Math.round(((reshipped+delivered)/decided)*100) : 0;
-  return {total, reshipped, delivered, pending, refunded, rate};
+  return {total, reshipped, delivered, pending, rtoAgain, refunded, rate};
 }
 function renderRtoStats(){
   const s = computeRtoStats(rtoOrders);
@@ -1434,12 +1436,13 @@ function renderRtoStats(){
     <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Reshipped ✅</div><div class="value">${s.reshipped}</div><div class="sub">new order sent out</div></div>
     <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Delivered ✅</div><div class="value">${s.delivered}</div><div class="sub">2nd shipment confirmed</div></div>
     <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending 🔁</div><div class="value">${s.pending}</div><div class="sub">awaiting action</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">RTO Again ↩</div><div class="value">${s.rtoAgain}</div><div class="sub">2nd shipment bounced back</div></div>
     <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Refunded ↺</div><div class="value">${s.refunded}</div><div class="sub">refund / store credit</div></div>
     <div class="stat-card rate"><div class="label">Reship Rate</div><div class="value">${s.rate}%</div><div class="sub">(reshipped+delivered) ÷ decided</div></div>
   `;
 }
 function renderRtoAlerts(){
-  const urgent = rtoOrders.filter(o=> o.status==='PENDING' && daysOverdueRto_(o) >= 0)
+  const urgent = rtoOrders.filter(o=> (o.status==='PENDING' || o.status==='RTO_AGAIN') && daysOverdueRto_(o) >= 0)
                         .sort((a,b)=> daysOverdueRto_(b)-daysOverdueRto_(a));
   document.getElementById('rtoAlertCount').textContent = urgent.length ? `${urgent.length} order${urgent.length>1?'s':''} at risk` : '';
   const box = document.getElementById('rtoAlertScroller');
@@ -1591,7 +1594,7 @@ function renderRtoAgentLeaderboard(){
 function applyRtoFilters(){
   return rtoOrders.filter(o=>{
     if(rtoFilters.status!=='ALL' && o.status!==rtoFilters.status) return false;
-    if(rtoFilters.priority==='HIGH' && !(o.status==='PENDING' && daysOverdueRto_(o)>=0)) return false;
+    if(rtoFilters.priority==='HIGH' && !((o.status==='PENDING' || o.status==='RTO_AGAIN') && daysOverdueRto_(o)>=0)) return false;
     if(rtoFilters.reason!=='ALL' && o.reason!==rtoFilters.reason) return false;
     if(rtoFilters.agent!=='ALL' && (o.agent||'Unassigned')!==rtoFilters.agent) return false;
     if(rtoFilters.month!=='ALL' && monthKey(o.date)!==rtoFilters.month) return false;
@@ -1622,6 +1625,7 @@ function renderRtoReasonFilterOptions(){
 function rtoStatusStamp(status){
   if(status==='DELIVERED') return `<span class="stamp delivered">✓ DELIVERED</span>`;
   if(status==='RESHIPPED') return `<span class="stamp delivered">✓ RESHIPPED</span>`;
+  if(status==='RTO_AGAIN') return `<span class="stamp rto">↩ RTO AGAIN</span>`;
   if(status==='REFUNDED') return `<span class="stamp rto">↺ REFUNDED</span>`;
   return `<span class="stamp pending">↻ PENDING</span>`;
 }
@@ -2522,6 +2526,7 @@ function openRtoDrawer(order){
           <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
           <option value="RESHIPPED" ${o.status==='RESHIPPED'?'selected':''}>✅ Reshipped</option>
           <option value="DELIVERED" ${o.status==='DELIVERED'?'selected':''}>✓ Delivered (2nd shipment confirmed)</option>
+          <option value="RTO_AGAIN" ${o.status==='RTO_AGAIN'?'selected':''}>↩ RTO Again (2nd time)</option>
           <option value="REFUNDED" ${o.status==='REFUNDED'?'selected':''}>↺ Refunded</option>
         </select>
       </div>
