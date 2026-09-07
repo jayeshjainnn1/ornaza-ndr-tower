@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ornaza Jewels — NDR Control Tower</title>
+<!-- Bump this on every real deploy — the "update available" banner compares
+     it against this exact string, not HTTP cache headers (etag/last-modified
+     from GitHub Pages' CDN turned out to vary between requests for the same
+     file, which was making the banner reappear even right after updating). -->
+<meta name="app-version" content="2026-09-07.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -4390,26 +4395,25 @@ if('serviceWorker' in navigator){
 }
 
 /* ---------------- update-available banner ----------------
-   Whenever you push a new index.html to GitHub, this automatically
-   notices (no manual version numbers to maintain) and shows the top
-   banner. No action needed from you beyond the normal upload — this
-   just detects it and lets the team refresh with one click. */
-let baselineUpdateTag = null;
-let latestUpdateTag = null;
-function captureBaselineUpdateTag(){
-  fetch('./index.html', { cache:'no-store', method:'HEAD' })
-    .then(r=>{ baselineUpdateTag = r.headers.get('etag') || r.headers.get('last-modified') || null; })
-    .catch(()=>{});
-}
+   Compares an explicit version string (the <meta name="app-version"> tag
+   in <head>, bumped by hand on every real deploy) instead of HTTP cache
+   headers. GitHub Pages' CDN was returning slightly different etag /
+   last-modified values for requests of the very same unchanged file,
+   which made the old check show "update available" over and over —
+   including right after you'd already updated. Comparing an explicit
+   version string only changes when the file's actual content changes. */
+const APP_VERSION = document.querySelector('meta[name="app-version"]').content;
+let latestRemoteVersion = null;
 function checkForUpdate(){
-  fetch('./index.html', { cache:'no-store', method:'HEAD' })
-    .then(r=>{
-      const tag = r.headers.get('etag') || r.headers.get('last-modified');
-      if(!tag) return;
-      latestUpdateTag = tag;
-      if(baselineUpdateTag && tag !== baselineUpdateTag){
-        const dismissed = sessionStorage.getItem('ndr_update_dismissed_tag');
-        if(dismissed === tag) return;
+  fetch('./index.html', { cache:'no-store' })
+    .then(r=>r.text())
+    .then(text=>{
+      const m = text.match(/<meta\s+name="app-version"\s+content="([^"]+)"/);
+      if(!m) return;
+      latestRemoteVersion = m[1];
+      if(latestRemoteVersion !== APP_VERSION){
+        const dismissed = sessionStorage.getItem('ndr_update_dismissed_version');
+        if(dismissed === latestRemoteVersion) return;
         document.getElementById('updateBanner').style.display = 'flex';
         updateBannerOffsets();
       }
@@ -4419,7 +4423,7 @@ function checkForUpdate(){
 function dismissUpdateBanner(){
   document.getElementById('updateBanner').style.display = 'none';
   updateBannerOffsets();
-  if(latestUpdateTag) sessionStorage.setItem('ndr_update_dismissed_tag', latestUpdateTag);
+  if(latestRemoteVersion) sessionStorage.setItem('ndr_update_dismissed_version', latestRemoteVersion);
 }
 function applyUpdate(){
   const finish = () => {
@@ -4438,7 +4442,6 @@ function applyUpdate(){
     finish();
   }
 }
-captureBaselineUpdateTag();
 setInterval(checkForUpdate, 60000);
 window.addEventListener('focus', checkForUpdate);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkForUpdate(); });
