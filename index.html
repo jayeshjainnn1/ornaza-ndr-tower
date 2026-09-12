@@ -2603,7 +2603,7 @@ function openNewRtoEntry(){
 function quickWhatsAppRto(id){
   const o = rtoOrders.find(x=>x.id===id);
   if(!o) return;
-  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id}. It was returned to us (${o.reason}). Could you please confirm your delivery address so we can resend it right away?`);
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.id}. It was returned to us (${o.reason}). Could you please confirm your delivery address so we can resend it right away?`);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
@@ -2868,7 +2868,7 @@ function quickWhatsAppRed(id){
   const o = redCases.find(x=>x.id===id);
   if(!o) return;
   const verb = {RETURN:'return',EXCHANGE:'exchange',DAMAGE:'damage report',WRONG_ITEM:'wrong item report',DELIVERED_NOT_RECEIVED:'delivered but not received report',MISSING:'missing item report'}[o.type] || 'case';
-  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id} and your ${verb}. Could you help confirm a few details so we can resolve this quickly?`);
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.id} and your ${verb}. Could you help confirm a few details so we can resolve this quickly?`);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
@@ -3130,7 +3130,7 @@ function openNewWaEntry(){
 function quickWhatsAppWa(id){
   const o = waIssues.find(x=>x.id===id);
   if(!o) return;
-  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id}. Following up on your message — `);
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.id}. Following up on your message — `);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
@@ -3404,7 +3404,7 @@ function openNewDispatchEntry(){
 function quickWhatsAppDispatch(id){
   const o = dispatchEntries.find(x=>x.id===id);
   if(!o) return;
-  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.orderId}. Following up on your ${typeLabel(o.reason).toLowerCase()} dispatch — `);
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.orderId}. Following up on your ${typeLabel(o.reason).toLowerCase()} dispatch — `);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
@@ -4172,7 +4172,7 @@ function openNewEntry(){
 function quickWhatsApp(id){
   const o = orders.find(x=>x.id===id);
   if(!o) return;
-  const msg = encodeURIComponent(`Hi, this is regarding your Ornaza Jewels order ${o.id}. We attempted delivery but couldn't complete it (${o.reason}). Could you confirm your availability so we can redeliver?`);
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.id}. We attempted delivery but couldn't complete it (${o.reason}). Could you confirm your availability so we can redeliver?`);
   if(o.phone){
     window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
   } else {
