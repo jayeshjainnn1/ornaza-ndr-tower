@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-12.1">
+<meta name="app-version" content="2026-09-12.2">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -361,6 +361,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
       Dispatch
       <span class="tag">New Item Dispatch Log — live</span>
+    </div>
+    <div class="rail-item" id="railChange" onclick="switchModule('change')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Change
+      <span class="tag">Order Change &amp; Hold Log — live</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -854,6 +860,108 @@
     </div>
     </div>
     <!-- ================= /NEW ITEM DISPATCH LOG MODULE ================= -->
+
+    <!-- ================= ORDER CHANGE & HOLD LOG MODULE ================= -->
+    <div id="changeView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="changeStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>🛑 Do not dispatch — pending changes &amp; cancels</h3>
+        <div class="sla-config">
+          <label for="changeSlaHours">Flag address/item changes not checked within</label>
+          <input type="number" id="changeSlaHours" min="1" max="24" value="4">
+          <span>hour(s) — cancels always show</span>
+        </div>
+        <div class="sla-config">
+          <label for="changeDispatchPhone">🔔 Notify one person (auto-sends) at</label>
+          <input type="text" id="changeDispatchPhone" placeholder="9198XXXXXXX" style="width:100px;">
+        </div>
+        <div class="sla-config">
+          <label for="changeDispatchGroupLink">or dispatch group (copies + opens)</label>
+          <input type="text" id="changeDispatchGroupLink" placeholder="https://chat.whatsapp.com/…" style="width:150px;">
+        </div>
+        <span id="changeAlertCount"></span>
+      </div>
+      <div style="font-size:11px;color:var(--slate-soft);margin:-4px 0 10px;">WhatsApp doesn't allow pre-filling a message into a group — group notify copies the text to your clipboard and opens the group so you just paste &amp; send. The individual number sends fully automatically.</div>
+      <div class="alert-scroller" id="changeAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>Change type breakdown</h3>
+        <div id="changeReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What this is telling you</h3>
+        <div id="changeInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- DAY-WISE VOLUME -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Day-wise volume</h3>
+      <div id="changeMonthlyBreakdown"></div>
+    </div>
+
+    <!-- TWO-ROLE LEADERBOARDS -->
+    <div class="insights-row" style="margin-bottom:22px;">
+      <div class="panel">
+        <h3>📝 Logged by (NDR team)</h3>
+        <div id="changeExecLeaderboard"></div>
+      </div>
+      <div class="panel">
+        <h3>📦 Checked by (Dispatch team)</h3>
+        <div id="changeAgentLeaderboard"></div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="changeSearchInput" placeholder="Search Order ID, phone or details…">
+      </div>
+      <div class="chip-group" id="changeStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="NEW">Awaiting check</div>
+        <div class="chip" data-status="RESOLVED">Checked</div>
+      </div>
+      <div class="chip-group" id="changePrioChips">
+        <div class="chip" data-prio="HIGH">🛑 Cancels only</div>
+      </div>
+      <select class="reason-filter" id="changeMonthFilter"><option value="ALL">All days</option></select>
+      <select class="reason-filter" id="changeReasonFilter"><option value="ALL">All change types</option></select>
+      <select class="reason-filter" id="changeAgentFilter"><option value="ALL">All dispatch handlers</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Logged</th>
+            <th>Order ID</th>
+            <th>Phone</th>
+            <th>Change Type</th>
+            <th>Details</th>
+            <th>Logged By</th>
+            <th>Checked By</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="changeTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="changeEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No requests match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /ORDER CHANGE & HOLD LOG MODULE ================= -->
   </main>
 </div>
 
@@ -988,6 +1096,30 @@ function daysSinceLoggedDispatch_(o){
 }
 function daysOverdueDispatch_(o){ return daysSinceLoggedDispatch_(o) - dispatchOpenSlaDays; }
 
+/* ---------------- Order Change & Hold Log module state ---------------- */
+// Two-role workflow, same shape as WA Log: NDR team logs a change/cancel
+// request the moment it comes in, Dispatch team checks it before packing —
+// applies the change, or holds the order entirely if it's a cancel.
+let changeRequests = [];
+let checkSlaHours = 4; // "dispatch should check a non-cancel request within N hours" — cancels ignore this and always show
+let dispatchNotifyPhone = ''; // Dispatch team's WhatsApp number — auto-sends directly. Shared setting (admin sets it once, everyone sees it).
+let dispatchGroupLink = ''; // Dispatch group invite link — WhatsApp can't pre-fill group messages, so this copies text + opens the group instead
+let changePendingChanges = {};
+let changeSyncInFlight = false;
+let changeSyncTimer = null;
+let changeSaveInFlight = false;
+let changeFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function changeTypeLabel(t){
+  return {ADDRESS_CHANGE:'📍 Address Change',ITEM_CHANGE:'🔁 Item Change',CANCEL:'🛑 Cancel',OTHER:'💬 Other'}[t] || t;
+}
+function hoursSinceChange_(iso){
+  if(!iso) return 0;
+  const d = parseISO_(iso);
+  if(!d || isNaN(d.getTime())) return 0;
+  return (TODAY - d) / (1000*60*60);
+}
+function hoursOverdueChange_(o){ return hoursSinceChange_(o.loggedAt) - checkSlaHours; }
+
 function monthKey(dateStr){ return dateStr ? dateStr.slice(0,7) : null; }
 function monthLabel(key){
   const [y,m] = key.split('-');
@@ -1030,6 +1162,14 @@ function loadLocalCache(){
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.DISPATCH_SLA_DAYS) dispatchOpenSlaDays = parseInt(s.DISPATCH_SLA_DAYS,10) || 3;
   }catch(e){}
+  try{ const cr = JSON.parse(localStorage.getItem('ndr_cache_change_requests')||'[]'); changeRequests = Array.isArray(cr) ? cr : []; }catch(e){ changeRequests = []; }
+  try{ changePendingChanges = JSON.parse(localStorage.getItem('ndr_change_pending_changes')||'{}'); }catch(e){ changePendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.CHECK_SLA_HOURS) checkSlaHours = parseInt(s.CHECK_SLA_HOURS,10) || 4;
+    if(s && s.DISPATCH_NOTIFY_PHONE) dispatchNotifyPhone = s.DISPATCH_NOTIFY_PHONE;
+    if(s && s.DISPATCH_GROUP_LINK) dispatchGroupLink = s.DISPATCH_GROUP_LINK;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -1038,7 +1178,7 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays, CHECK_SLA_HOURS: checkSlaHours, DISPATCH_NOTIFY_PHONE: dispatchNotifyPhone, DISPATCH_GROUP_LINK: dispatchGroupLink})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
@@ -1048,6 +1188,8 @@ function saveWaIssuesCache(){ localStorage.setItem('ndr_cache_wa_issues', JSON.s
 function saveWaPendingChanges(){ localStorage.setItem('ndr_wa_pending_changes', JSON.stringify(waPendingChanges)); }
 function saveDispatchEntriesCache(){ localStorage.setItem('ndr_cache_dispatch_entries', JSON.stringify(dispatchEntries)); }
 function saveDispatchPendingChanges(){ localStorage.setItem('ndr_dispatch_pending_changes', JSON.stringify(dispatchPendingChanges)); }
+function saveChangeRequestsCache(){ localStorage.setItem('ndr_cache_change_requests', JSON.stringify(changeRequests)); }
+function saveChangePendingChanges(){ localStorage.setItem('ndr_change_pending_changes', JSON.stringify(changePendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -2400,6 +2542,265 @@ function renderAllDispatch(){
   updateSyncBadge();
 }
 
+/* ============================================================================
+   ORDER CHANGE & HOLD LOG — sixth module. Two-role handoff like WA Log:
+   NDR team logs the request, Dispatch team checks it before packing/
+   shipping. No leaderboard-driven "success rate" the way RTO/Returns have —
+   the point here is speed of check + never missing a pending cancel.
+   ============================================================================ */
+function computeChangeStats(data){
+  const total = data.length;
+  const pending = data.filter(o=>o.status==='NEW').length;
+  const done = data.filter(o=>o.status==='RESOLVED').length;
+  const pendingCancels = data.filter(o=>o.changeType==='CANCEL' && o.status==='NEW').length;
+  const rate = total ? Math.round((done/total)*100) : 0;
+  return {total, pending, done, pendingCancels, rate};
+}
+function renderChangeStats(){
+  const s = computeChangeStats(changeRequests);
+  document.getElementById('changeStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Requests</div><div class="value">${s.total}</div><div class="sub">in this log</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Awaiting Check 🔁</div><div class="value">${s.pending}</div><div class="sub">not yet checked by dispatch</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Checked ✅</div><div class="value">${s.done}</div><div class="sub">actioned or held</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Pending Cancels 🛑</div><div class="value">${s.pendingCancels}</div><div class="sub">must not be dispatched</div></div>
+    <div class="stat-card rate"><div class="label">Checked Rate</div><div class="value">${s.rate}%</div><div class="sub">checked ÷ total requests</div></div>
+  `;
+}
+function renderChangeAlerts(){
+  const pendingCancels = changeRequests.filter(o=> o.changeType==='CANCEL' && o.status==='NEW');
+  const otherOverdue = changeRequests.filter(o=> o.changeType!=='CANCEL' && o.status==='NEW' && hoursOverdueChange_(o) >= 0)
+                              .sort((a,b)=> hoursOverdueChange_(b)-hoursOverdueChange_(a));
+  const urgent = [...pendingCancels, ...otherOverdue];
+  document.getElementById('changeAlertCount').textContent = urgent.length ? `${urgent.length} at risk of dispatch` : '';
+  const box = document.getElementById('changeAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing waiting — no pending cancels, and every change request is within ${checkSlaHours}h.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const isCancel = o.changeType==='CANCEL';
+    const hrs = Math.floor(hoursSinceChange_(o.loggedAt));
+    const message = isCancel
+      ? `🛑 DO NOT DISPATCH — logged ${hrs}h ago, not yet confirmed held`
+      : `Logged ${hrs}h ago — no dispatch check yet`;
+    return `
+    <div class="alert-card ${isCancel?'stop':''}">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${changeTypeLabel(o.changeType)} · ${escapeHtml(o.phone)}</div>
+      <div class="stale">${message}</div>
+      ${!isCancel ? `<div style="font-size:11px;margin-top:2px;color:var(--slate-soft);">Logged by: ${escapeHtml(o.loggedBy)}</div>` : ''}
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openChangeDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppChange('${escapeHtml(o.id)}')">WhatsApp</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeChangeReasonBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.changeType || 'OTHER';
+    if(!map[r]) map[r] = {reason:r, count:0, done:0, pending:0};
+    map[r].count++;
+    if(o.status==='RESOLVED') map[r].done++; else map[r].pending++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderChangeReasonChart(){
+  const breakdown = computeChangeReasonBreakdown(changeRequests);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('changeReasonChart').innerHTML = breakdown.map(b=>{
+    const pendingRate = b.count ? Math.round((b.pending/b.count)*100) : 0;
+    const isLeak = b.reason==='CANCEL' ? b.pending>0 : (pendingRate >= 60 && b.count >= 2);
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${changeTypeLabel(b.reason)}">${changeTypeLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${b.pending} open</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const s = computeChangeStats(changeRequests);
+  let callouts = '';
+  if(s.pendingCancels > 0){
+    callouts += `<div class="callout"><b>${s.pendingCancels} cancel request${s.pendingCancels>1?'s are':' is'}</b> still unconfirmed right now — if dispatch packs these before checking this list, that's a wasted shipment and a refund headache.</div>`;
+  } else {
+    callouts += `<div class="callout">No cancel requests are currently at risk — dispatch is clear on that front.</div>`;
+  }
+  const topReason = breakdown[0];
+  if(topReason){
+    callouts += `<div class="callout"><b>${changeTypeLabel(topReason.reason)}</b> is the most common request type (${topReason.count} cases) — worth a quick standard checklist for it.</div>`;
+  }
+  document.getElementById('changeInsightCallouts').innerHTML = callouts;
+}
+function computeChangeDailyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = dayKey(o.loggedAt) || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, done:0, pending:0};
+    map[k].total++;
+    if(o.status==='RESOLVED') map[k].done++; else map[k].pending++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderChangeMonthlyBreakdown(){
+  const days = computeChangeDailyBreakdown(changeRequests);
+  let prevRate = null;
+  const rows = days.map(m=>{
+    const rate = m.total ? Math.round((m.done/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':dayLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.done} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div></div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('changeMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Day</div><div>Total</div><div>Checked</div><div>Open</div><div></div><div>Rate</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated requests yet.</div>'}
+  `;
+}
+function renderChangeExecLeaderboard(){
+  const map = {};
+  changeRequests.forEach(o=>{
+    const a = o.loggedBy || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0};
+    map[a].assigned++;
+  });
+  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+    <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
+      <div class="lb-name">${escapeHtml(a.agent)}</div>
+      <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*15)}%"></div></div>
+      <div class="lb-rate">${a.assigned} logged</div>
+    </div>`).join('');
+  document.getElementById('changeExecLeaderboard').innerHTML = `
+    <div class="lb-grid head" style="grid-template-columns:130px 1fr 60px;"><div>NDR Person</div><div>Volume</div><div></div></div>
+    ${rows}
+  `;
+}
+function computeChangeAgentLeaderboard(data){
+  const map = {};
+  data.forEach(o=>{
+    if(!o.checkedBy) return;
+    const a = o.checkedBy;
+    if(!map[a]) map[a] = {agent:a, assigned:0, done:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='RESOLVED') map[a].done++; else map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    const rateA = a.assigned ? a.done/a.assigned : 0;
+    const rateB = b.assigned ? b.done/b.assigned : 0;
+    return rateB - rateA;
+  });
+}
+function renderChangeAgentLeaderboard(){
+  const lb = computeChangeAgentLeaderboard(changeRequests);
+  const rows = lb.map((a,i)=>{
+    const rate = a.assigned ? Math.round((a.done/a.assigned)*100) : null;
+    const barClass = rate===null ? '' : rate>=60 ? '' : rate>=30 ? 'low' : 'crit';
+    const isTop = i===0 && rate!==null && a.assigned>0;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.done} ✅</div>
+        <div style="color:var(--amber)">${a.pending} 🔁</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('changeAgentLeaderboard').innerHTML = `
+    <div class="lb-grid head"><div>Dispatch Person</div><div>Assigned</div><div>Checked</div><div>Open</div><div>Checked rate</div><div></div></div>
+    ${rows}
+  `;
+}
+function applyChangeFilters(){
+  return changeRequests.filter(o=>{
+    if(changeFilters.status!=='ALL' && o.status!==changeFilters.status) return false;
+    if(changeFilters.priority==='HIGH' && o.changeType!=='CANCEL') return false;
+    if(changeFilters.reason!=='ALL' && o.changeType!==changeFilters.reason) return false;
+    if(changeFilters.agent!=='ALL' && (o.checkedBy||'Unassigned')!==changeFilters.agent) return false;
+    if(changeFilters.month!=='ALL' && dayKey(o.loggedAt)!==changeFilters.month) return false;
+    if(changeFilters.search){
+      const s = changeFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.phone} ${o.details}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderChangeReasonFilterOptions(){
+  const sel = document.getElementById('changeReasonFilter');
+  const reasons = [...new Set(changeRequests.map(o=>o.changeType).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All change types</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${changeTypeLabel(r)}</option>`).join('');
+  sel.value = changeFilters.reason;
+
+  const agentSel = document.getElementById('changeAgentFilter');
+  const agentsInData = [...new Set([...AGENTS, ...changeRequests.map(o=>o.checkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  agentSel.innerHTML = '<option value="ALL">All dispatch handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = changeFilters.agent;
+
+  const monthSel = document.getElementById('changeMonthFilter');
+  const daysInData = [...new Set(changeRequests.map(o=>dayKey(o.loggedAt)).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All days</option>' + daysInData.map(k=>`<option value="${k}">${dayLabel(k)}</option>`).join('');
+  monthSel.value = changeFilters.month;
+}
+function changeStatusStamp(o){
+  if(o.status==='RESOLVED') return o.changeType==='CANCEL' ? `<span class="stamp delivered">✓ HELD / STOPPED</span>` : `<span class="stamp delivered">✓ UPDATED</span>`;
+  return o.changeType==='CANCEL' ? `<span class="stamp rto">🛑 STOP DISPATCH</span>` : `<span class="stamp pending">🔁 AWAITING CHECK</span>`;
+}
+function renderChangeTable(){
+  const data = applyChangeFilters();
+  const body = document.getElementById('changeTableBody');
+  document.getElementById('changeEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>{
+    const isRiskyCancel = o.changeType==='CANCEL' && o.status==='NEW';
+    return `
+    <tr onclick="openChangeDrawerById('${escapeHtml(o.id)}')" class="${isRiskyCancel?'row-stop':''}">
+      <td>${fmtDateTime(o.loggedAt)}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${changePendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.phone)}</td>
+      <td>${changeTypeLabel(o.changeType)}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.details)}">${escapeHtml(o.details) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${escapeHtml(o.loggedBy)} ${o.notified ? '<span title="Dispatch notified" style="color:var(--green);">🔔</span>' : ''}</td>
+      <td>${o.checkedBy ? escapeHtml(o.checkedBy) : '<span style="color:var(--red);font-weight:600;">Not yet</span>'}</td>
+      <td>${changeStatusStamp(o)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="Notify dispatch team" onclick="notifyDispatchTeamChange('${escapeHtml(o.id)}')">🔔</div>
+          <div class="icon-btn" title="WhatsApp customer" onclick="quickWhatsAppChange('${escapeHtml(o.id)}')">💬</div>
+          <div class="icon-btn" title="Open" onclick="openChangeDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `;
+  }).join('');
+}
+function renderAllChange(){
+  renderChangeStats();
+  renderChangeAlerts();
+  renderChangeReasonChart();
+  renderChangeMonthlyBreakdown();
+  renderChangeExecLeaderboard();
+  renderChangeAgentLeaderboard();
+  renderChangeReasonFilterOptions();
+  renderChangeTable();
+  updateSyncBadge();
+}
+
 /* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
@@ -2408,19 +2809,22 @@ function switchModule(module){
   document.getElementById('returnsView').style.display = module==='returns' ? '' : 'none';
   document.getElementById('waView').style.display = module==='wa' ? '' : 'none';
   document.getElementById('dispatchView').style.display = module==='dispatch' ? '' : 'none';
+  document.getElementById('changeView').style.display = module==='change' ? '' : 'none';
   document.getElementById('railNdr').classList.toggle('active', module==='ndr');
   document.getElementById('railRto').classList.toggle('active', module==='rto');
   document.getElementById('railReturns').classList.toggle('active', module==='returns');
   document.getElementById('railWa').classList.toggle('active', module==='wa');
   document.getElementById('railDispatch').classList.toggle('active', module==='dispatch');
-  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log' };
-  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch' };
+  document.getElementById('railChange').classList.toggle('active', module==='change');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log', change:'Order Change & Hold Log' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch', change:'+ Log Change Request' };
   document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
   document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
   if(module==='rto') renderAllRto();
   else if(module==='returns') renderAllRed();
   else if(module==='wa') renderAllWa();
   else if(module==='dispatch') renderAllDispatch();
+  else if(module==='change') renderAllChange();
   else renderAll();
 }
 
@@ -3496,6 +3900,288 @@ function onDispatchSyncFailure(err){
   scheduleDispatchSyncSoon(15000);
 }
 
+/* ---------------- Order Change & Hold Log drawer + offline sync ---------------- */
+function openChangeDrawerById(id){
+  const o = changeRequests.find(x=>x.id===id);
+  if(o) openChangeDrawer(o);
+}
+function openChangeDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'change';
+  const o = order;
+  const isCancel = o.changeType==='CANCEL';
+  const loggedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.loggedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const checkedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.checkedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">${escapeHtml(o.phone) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+
+      <div class="role-section exec">
+        <div class="role-header exec-h"><span class="role-badge">1</span>NDR Team — request logged</div>
+        <div class="field-group">
+          <label>Logged at</label>
+          <input type="datetime-local" id="d_loggedAt" value="${o.loggedAt||''}">
+        </div>
+        <div class="field-group">
+          <label>Phone</label>
+          <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)}">
+        </div>
+        <div class="field-group">
+          <label>Change type</label>
+          <select id="d_changeType">
+            <option value="ADDRESS_CHANGE" ${o.changeType==='ADDRESS_CHANGE'?'selected':''}>📍 Address Change</option>
+            <option value="ITEM_CHANGE" ${o.changeType==='ITEM_CHANGE'?'selected':''}>🔁 Item Change</option>
+            <option value="CANCEL" ${o.changeType==='CANCEL'?'selected':''}>🛑 Cancel (before dispatch)</option>
+            <option value="OTHER" ${o.changeType==='OTHER'?'selected':''}>💬 Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Details of the request</label>
+          <textarea id="d_details">${escapeHtml(o.details)}</textarea>
+        </div>
+        <div class="field-group">
+          <label>Logged by</label>
+          <select id="d_loggedBy">
+            <option value="Unassigned" ${!o.loggedBy?'selected':''}>Unassigned</option>
+            ${loggedByOptions}
+          </select>
+        </div>
+      </div>
+
+      <div class="role-section ndr">
+        <div class="role-header ndr-h"><span class="role-badge">2</span>Dispatch Team — ${isCancel ? 'confirm held' : 'check before shipping'}</div>
+        ${isCancel ? `<div class="drawer-note" style="background:var(--red-soft);color:var(--red);font-weight:600;margin-top:0;margin-bottom:14px;">🛑 Do not dispatch this order until this section is marked Checked.</div>` : ''}
+        <div class="field-group">
+          <label>Checked by</label>
+          <select id="d_checkedBy">
+            <option value="" ${!o.checkedBy?'selected':''}>— Not yet checked —</option>
+            ${checkedByOptions}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="d_status">
+            <option value="NEW" ${o.status==='NEW'?'selected':''}>🔁 Awaiting check</option>
+            <option value="RESOLVED" ${o.status==='RESOLVED'?'selected':''}>${isCancel?'✅ Held / stopped':'✅ Updated'}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveChangeDrawer()">Save changes</button>
+        <button class="btn" onclick="notifyDispatchTeamChange('${escapeHtml(o.id)}')">🔔 Notify dispatch team</button>
+        <button class="btn" onclick="quickWhatsAppChange('${escapeHtml(o.id)}')">💬 Message customer</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      ${o.notified ? '<div style="font-size:11.5px;color:var(--green);font-weight:600;margin-top:8px;">🔔 Dispatch team already notified for this entry</div>' : ''}
+      <div class="drawer-note">Changes save to this device instantly and sync to the Order Change &amp; Hold Log sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  // No applyDrawerLockIfNeeded() call here on purpose — same reasoning as
+  // the WhatsApp Issue Log: the NDR team logs it, the Dispatch team is
+  // meant to check/action a different person's entry, so locking it to the
+  // creator would break the whole handoff.
+}
+function saveChangeDrawer(){
+  if(changeSaveInFlight) return; // swallow a duplicate/ghost click instead of creating a second row
+  changeSaveInFlight = true;
+  try {
+    const o = changeRequests.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(changeRequests.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already has a change/hold request logged. Open the existing entry instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    o.loggedAt = document.getElementById('d_loggedAt').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.changeType = document.getElementById('d_changeType').value;
+    o.details = document.getElementById('d_details').value;
+    o.loggedBy = document.getElementById('d_loggedBy').value;
+    const checkedBy = document.getElementById('d_checkedBy').value;
+    if(checkedBy && !o.checkedAt) o.checkedAt = TODAY.toISOString().slice(0,16);
+    o.checkedBy = checkedBy;
+    o.status = document.getElementById('d_status').value;
+
+    queueChangeChange(o, isNewEntry);
+    saveChangeRequestsCache();
+    closeDrawer();
+    renderAllChange();
+    showToast(isNewEntry ? 'Request logged — syncing…' : 'Changes saved — syncing…', 'success');
+    if(isNewEntry) notifyDispatchTeamChange(o.id);
+  } catch(err){
+    console.error('saveChangeDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  } finally {
+    changeSaveInFlight = false;
+  }
+}
+function openNewChangeEntry(){
+  const nowStr = TODAY.toISOString().slice(0,16);
+  const defaultLoggedBy = AGENTS.includes(currentUser.displayName) ? currentUser.displayName : (AGENTS[0] || 'Unassigned');
+  const blank = {id:'__new__', loggedAt:nowStr, phone:'', changeType:'ADDRESS_CHANGE', details:'', loggedBy:defaultLoggedBy, checkedBy:'', checkedAt:'', status:'NEW', notified:false};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'change';
+  changeRequests.push(blank);
+  openChangeDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New change request';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+  const loggedAtField = document.getElementById('d_loggedAt');
+  loggedAtField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+
+  const d_idField = document.getElementById('d_id');
+  if(d_idField) d_idField.focus();
+}
+function quickWhatsAppChange(id){
+  const o = changeRequests.find(x=>x.id===id);
+  if(!o) return;
+  const verb = {ADDRESS_CHANGE:'address change',ITEM_CHANGE:'item change',CANCEL:'cancellation',OTHER:'request'}[o.changeType] || 'request';
+  const msg = encodeURIComponent(`Hi, this is regarding your *PINKJELLY* order ${o.id} and your ${verb}. Could you confirm a few details so we can action this before dispatch?`);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.id+' yet — open the entry and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function notifyDispatchTeamChange(id){
+  const o = changeRequests.find(x=>x.id===id);
+  if(!o) return;
+  const urgentTag = o.changeType==='CANCEL' ? '🛑 CANCEL — DO NOT DISPATCH' : '🆕 New entry — please check before dispatch';
+  const lines = [
+    urgentTag,
+    `Order ID: ${o.id}`,
+    `Change Type: ${changeTypeLabel(o.changeType).replace(/^\S+\s/,'')}`,
+    o.details ? `Details: ${o.details}` : null,
+    `Logged by: ${o.loggedBy}`
+  ].filter(Boolean).join('\n');
+
+  if(dispatchGroupLink){
+    // WhatsApp has no way to pre-fill a message into a group via a link —
+    // this copies the text to the clipboard, then opens the group so the
+    // person just has to paste and hit send.
+    window.open(dispatchGroupLink, '_blank');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(lines)
+        .then(()=> showToast('Message copied to clipboard — paste it into the dispatch group and hit send.', 'success'))
+        .catch(()=> showToast("Couldn't auto-copy — copy this manually and paste into the group:\n\n"+lines, 'error'));
+    } else {
+      showToast('Copy this and paste into the dispatch group:\n\n'+lines, 'error');
+    }
+  } else if(dispatchNotifyPhone){
+    const msg = encodeURIComponent(lines);
+    window.open(`https://wa.me/${dispatchNotifyPhone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('Set a dispatch number or group link above (in the alerts bar) to enable notifications.', 'error');
+    return;
+  }
+  o.notified = true;
+  queueChangeChange(o, false);
+  saveChangeRequestsCache();
+  renderChangeTable();
+}
+function exportChangeCSV(){
+  const data = applyChangeFilters();
+  const headers = ['Logged At','Order ID','Phone','Change Type','Details','Logged By','Checked By','Status'];
+  const rows = data.map(o=>[o.loggedAt,o.id,o.phone,changeTypeLabel(o.changeType),o.details,o.loggedBy,o.checkedBy,o.status]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'order-change-hold-log-export.csv';
+  a.click();
+}
+function queueChangeChange(order, isNew){
+  const wasNew = changePendingChanges[order.id] && changePendingChanges[order.id].isNew;
+  changePendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveChangePendingChanges();
+  updateSyncBadge();
+  scheduleChangeSyncSoon(400);
+}
+function scheduleChangeSyncSoon(delay){
+  clearTimeout(changeSyncTimer);
+  changeSyncTimer = setTimeout(attemptSyncChange, delay || 1500);
+}
+function attemptSyncChange(){
+  const ids = Object.keys(changePendingChanges);
+  if(!ids.length || changeSyncInFlight || !authToken) return;
+  changeSyncInFlight = true;
+  const batch = ids.map(id => changePendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncChange', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      changeSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleChangeSyncSoon(15000);
+        return;
+      }
+      onChangeSyncSuccess(res, batch);
+    })
+    .catch(err => { changeSyncInFlight=false; onChangeSyncFailure(err); });
+}
+function onChangeSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleChangeSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = changePendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete changePendingChanges[orderId];
+  });
+  (res.rejected||[]).forEach(r=>{
+    if(changePendingChanges[r.orderId]) delete changePendingChanges[r.orderId];
+    if(r.duplicate){
+      changeRequests = changeRequests.filter(o=>o.id!==r.orderId);
+    }
+    console.warn('Order Change/Hold Log sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = changeRequests.findIndex(x=>x.id===o.id);
+    if(idx>-1) changeRequests[idx] = Object.assign({}, changeRequests[idx], o);
+    else changeRequests.push(o);
+  });
+  saveChangePendingChanges();
+  saveChangeRequestsCache();
+  lastSyncTime = new Date();
+  renderAllChange();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(Object.keys(changePendingChanges).length) scheduleChangeSyncSoon(4000);
+}
+function onChangeSyncFailure(err){
+  console.warn('Order Change/Hold Log sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleChangeSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -3504,7 +4190,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -3624,6 +4310,18 @@ function onBootstrapSuccess(res){
   }
   dispatchEntries = mergedDispatch;
 
+  // Same merge + in-progress-draft protection for the Order Change & Hold Log module.
+  const serverChangeRequests = res.changeRequests || [];
+  const mergedChange = serverChangeRequests.map(so => changePendingChanges[so.id] ? Object.assign({}, so, changePendingChanges[so.id].payload) : so);
+  Object.keys(changePendingChanges).forEach(id=>{
+    if(!mergedChange.find(o=>o.id===id)) mergedChange.push(changePendingChanges[id].payload);
+  });
+  const inProgressChangeDraft = changeRequests.find(o=>o.id==='__new__');
+  if(inProgressChangeDraft && !mergedChange.find(o=>o.id==='__new__')){
+    mergedChange.push(inProgressChangeDraft);
+  }
+  changeRequests = mergedChange;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); computeWaTeams_(res.agents); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -3650,6 +4348,21 @@ function onBootstrapSuccess(res){
     const dispatchSlaInput = document.getElementById('dispatchSlaDays');
     if(dispatchSlaInput) dispatchSlaInput.value = dispatchOpenSlaDays;
   }
+  if(res.settings && res.settings.CHECK_SLA_HOURS){
+    checkSlaHours = parseInt(res.settings.CHECK_SLA_HOURS,10) || 4;
+    const changeSlaInput = document.getElementById('changeSlaHours');
+    if(changeSlaInput) changeSlaInput.value = checkSlaHours;
+  }
+  if(res.settings && res.settings.DISPATCH_NOTIFY_PHONE){
+    dispatchNotifyPhone = res.settings.DISPATCH_NOTIFY_PHONE;
+    const phoneInput = document.getElementById('changeDispatchPhone');
+    if(phoneInput) phoneInput.value = dispatchNotifyPhone;
+  }
+  if(res.settings && res.settings.DISPATCH_GROUP_LINK){
+    dispatchGroupLink = res.settings.DISPATCH_GROUP_LINK;
+    const groupInput = document.getElementById('changeDispatchGroupLink');
+    if(groupInput) groupInput.value = dispatchGroupLink;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
@@ -3657,16 +4370,19 @@ function onBootstrapSuccess(res){
   saveRedCasesCache();
   saveWaIssuesCache();
   saveDispatchEntriesCache();
+  saveChangeRequestsCache();
   renderAll();
   renderAllRto();
   renderAllRed();
   renderAllWa();
   renderAllDispatch();
+  renderAllChange();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
   if(Object.keys(waPendingChanges).length) attemptSyncWa();
   if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch();
+  if(Object.keys(changePendingChanges).length) attemptSyncChange();
 }
 
 function queueChange(order, isNew){
@@ -3771,7 +4487,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -3812,6 +4528,24 @@ function pushRemarkSlaSetting(){
 function pushDispatchSlaSetting(){
   if(!authToken) return;
   apiPost('setSetting', { key:'DISPATCH_SLA_DAYS', value: dispatchOpenSlaDays })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushCheckSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'CHECK_SLA_HOURS', value: checkSlaHours })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushDispatchNotifyPhoneSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'DISPATCH_NOTIFY_PHONE', value: dispatchNotifyPhone })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushDispatchGroupLinkSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'DISPATCH_GROUP_LINK', value: dispatchGroupLink })
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
@@ -4026,6 +4760,7 @@ function closeDrawer(){
     else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -4225,6 +4960,7 @@ function bindEvents(){
     else if(currentModule==='returns') exportRedCSV();
     else if(currentModule==='wa') exportWaCSV();
     else if(currentModule==='dispatch') exportDispatchCSV();
+    else if(currentModule==='change') exportChangeCSV();
     else exportCSV();
   });
   document.getElementById('newBtn').addEventListener('click', ()=>{
@@ -4232,6 +4968,7 @@ function bindEvents(){
     else if(currentModule==='returns') openNewRedEntry();
     else if(currentModule==='wa') openNewWaEntry();
     else if(currentModule==='dispatch') openNewDispatchEntry();
+    else if(currentModule==='change') openNewChangeEntry();
     else openNewEntry();
   });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
@@ -4339,6 +5076,42 @@ function bindEvents(){
     pushDispatchSlaSetting();
   });
 
+  // ---- Order Change & Hold Log toolbar ----
+  document.getElementById('changeSearchInput').addEventListener('input', e=>{ changeFilters.search = e.target.value; renderChangeTable(); });
+  document.getElementById('changeStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#changeStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    changeFilters.status = chip.dataset.status;
+    renderChangeTable();
+  });
+  document.getElementById('changePrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    changeFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderChangeTable();
+  });
+  document.getElementById('changeReasonFilter').addEventListener('change', e=>{ changeFilters.reason = e.target.value; renderChangeTable(); });
+  document.getElementById('changeAgentFilter').addEventListener('change', e=>{ changeFilters.agent = e.target.value; renderChangeTable(); });
+  document.getElementById('changeMonthFilter').addEventListener('change', e=>{ changeFilters.month = e.target.value; renderChangeTable(); });
+  document.getElementById('changeSlaHours').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    checkSlaHours = (v && v > 0) ? v : 4;
+    saveSettingsCache();
+    renderChangeAlerts();
+    pushCheckSlaSetting();
+  });
+  document.getElementById('changeDispatchPhone').addEventListener('input', e=>{
+    dispatchNotifyPhone = e.target.value;
+    saveSettingsCache();
+    pushDispatchNotifyPhoneSetting();
+  });
+  document.getElementById('changeDispatchGroupLink').addEventListener('input', e=>{
+    dispatchGroupLink = e.target.value;
+    saveSettingsCache();
+    pushDispatchGroupLinkSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
@@ -4347,19 +5120,21 @@ function bindEvents(){
       else if(activeDrawerModule==='returns') redCases = redCases.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
   setInterval(()=>{ if(Object.keys(redPendingChanges).length) attemptSyncRed(); }, 5000);
   setInterval(()=>{ if(Object.keys(waPendingChanges).length) attemptSyncWa(); }, 5000);
   setInterval(()=>{ if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch(); }, 5000);
+  setInterval(()=>{ if(Object.keys(changePendingChanges).length) attemptSyncChange(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -4370,11 +5145,15 @@ function startApp(){
   document.getElementById('redSlaDays').value = initiateSlaDays;
   document.getElementById('waSlaHours').value = remarkSlaHours;
   document.getElementById('dispatchSlaDays').value = dispatchOpenSlaDays;
+  document.getElementById('changeSlaHours').value = checkSlaHours;
+  document.getElementById('changeDispatchPhone').value = dispatchNotifyPhone;
+  document.getElementById('changeDispatchGroupLink').value = dispatchGroupLink;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
   renderAllRed();
   renderAllWa();
   renderAllDispatch();
+  renderAllChange();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
