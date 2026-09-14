@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-14.1">
+<meta name="app-version" content="2026-09-14.2">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -4073,7 +4073,20 @@ function notifyDispatchTeamChange(id){
     `Logged by: ${o.loggedBy}`
   ].filter(Boolean).join('\n');
 
-  if(dispatchGroupLink){
+  // The "dispatch group" field must be an actual WhatsApp GROUP INVITE link
+  // (https://chat.whatsapp.com/xxxxxxxx) — not a "Click to Chat" send link
+  // like https://api.whatsapp.com/send/?phone=...&text=..., which has a
+  // message frozen into its own URL. If that kind of link ends up in this
+  // field, opening it just replays that one frozen message every time,
+  // for every order, no matter what's actually being notified — which is
+  // exactly the "order number never changes" symptom. Catch it here
+  // instead of silently reusing stale text.
+  const looksLikeGroupInviteLink = dispatchGroupLink && /^https:\/\/chat\.whatsapp\.com\//i.test(dispatchGroupLink.trim());
+  if(dispatchGroupLink && !looksLikeGroupInviteLink){
+    showToast('The "dispatch group" link in the alerts bar isn\'t a WhatsApp group invite link — it looks like a pre-filled chat link with old text baked into it, so it will keep showing that same old message for every order. Replace it with a real group invite link (starts with https://chat.whatsapp.com/), or clear that field and use the phone number field instead.', 'error');
+    return;
+  }
+  if(looksLikeGroupInviteLink){
     // WhatsApp has no way to pre-fill a message into a group via a link —
     // this copies the text to the clipboard, then opens the group so the
     // person just has to paste and hit send.
