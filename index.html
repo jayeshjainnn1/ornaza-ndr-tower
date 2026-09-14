@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-12.2">
+<meta name="app-version" content="2026-09-14.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -4077,13 +4077,23 @@ function notifyDispatchTeamChange(id){
     // WhatsApp has no way to pre-fill a message into a group via a link —
     // this copies the text to the clipboard, then opens the group so the
     // person just has to paste and hit send.
-    window.open(dispatchGroupLink, '_blank');
+    // IMPORTANT: the clipboard write must happen BEFORE window.open(), not
+    // after. Opening a new tab shifts browser focus away from this page,
+    // and most browsers silently refuse clipboard writes from an unfocused
+    // document — so writing after open() would work the very first time
+    // (page still focused) and then silently fail on every click after
+    // that, leaving whichever order's text copied first stuck in the
+    // clipboard forever. This was the bug: every "notify dispatch" click
+    // pasted the same first order's details regardless of which order was
+    // actually clicked.
+    const openGroup = () => window.open(dispatchGroupLink, '_blank');
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(lines)
-        .then(()=> showToast('Message copied to clipboard — paste it into the dispatch group and hit send.', 'success'))
-        .catch(()=> showToast("Couldn't auto-copy — copy this manually and paste into the group:\n\n"+lines, 'error'));
+        .then(()=> { showToast('Message copied to clipboard — paste it into the dispatch group and hit send.', 'success'); openGroup(); })
+        .catch(()=> { showToast("Couldn't auto-copy — copy this manually and paste into the group:\n\n"+lines, 'error'); openGroup(); });
     } else {
       showToast('Copy this and paste into the dispatch group:\n\n'+lines, 'error');
+      openGroup();
     }
   } else if(dispatchNotifyPhone){
     const msg = encodeURIComponent(lines);
