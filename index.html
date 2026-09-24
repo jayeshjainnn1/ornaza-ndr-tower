@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-14.2">
+<meta name="app-version" content="2026-09-24.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -367,6 +367,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Change
       <span class="tag">Order Change &amp; Hold Log — live</span>
+    </div>
+    <div class="rail-item" id="railRtowr" onclick="switchModule('rtowr')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      RTO Check
+      <span class="tag">RTO Wrong Received Log — live</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -962,6 +968,104 @@
     </div>
     </div>
     <!-- ================= /ORDER CHANGE & HOLD LOG MODULE ================= -->
+
+    <!-- ================= RTO WRONG RECEIVED LOG MODULE ================= -->
+    <div id="rtowrView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="rtowrStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>🔁 Pending review — RTO wrong-received entries</h3>
+        <div class="sla-config">
+          <label for="rtowrSlaDays">Flag entries not reviewed within</label>
+          <input type="number" id="rtowrSlaDays" min="1" max="30" value="2">
+          <span>day(s)</span>
+        </div>
+        <span id="rtowrAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="rtowrAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>By source team</h3>
+        <div id="rtowrReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What this is telling you</h3>
+        <div id="rtowrInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- DAY-WISE VOLUME -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Day-wise volume</h3>
+      <div id="rtowrMonthlyBreakdown"></div>
+    </div>
+
+    <!-- TWO-ROLE LEADERBOARDS -->
+    <div class="insights-row" style="margin-bottom:22px;">
+      <div class="panel">
+        <h3>📦 RTO team entries</h3>
+        <div id="rtowrExecLeaderboard"></div>
+      </div>
+      <div class="panel">
+        <h3>📝 NDR team entries</h3>
+        <div id="rtowrAgentLeaderboard"></div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="rtowrSearchInput" placeholder="Search Order ID, AWB or remark…">
+      </div>
+      <div class="chip-group" id="rtowrStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="PENDING">Pending</div>
+        <div class="chip" data-status="APPROVED">Approved</div>
+        <div class="chip" data-status="REJECTED">Rejected</div>
+      </div>
+      <div class="chip-group" id="rtowrPrioChips">
+        <div class="chip" data-prio="HIGH">⏰ Overdue only</div>
+      </div>
+      <select class="reason-filter" id="rtowrMonthFilter"><option value="ALL">All days</option></select>
+      <select class="reason-filter" id="rtowrReasonFilter">
+        <option value="ALL">Both teams</option>
+        <option value="RTO_TEAM">📦 RTO Team</option>
+        <option value="NDR_TEAM">📝 NDR Team</option>
+      </select>
+      <select class="reason-filter" id="rtowrAgentFilter"><option value="ALL">All people</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>AWB</th>
+            <th>Raised By Team</th>
+            <th>Raised By</th>
+            <th>Remark</th>
+            <th>Status</th>
+            <th>Reviewed On</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rtowrTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="rtowrEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No entries match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /RTO WRONG RECEIVED LOG MODULE ================= -->
   </main>
 </div>
 
@@ -1109,6 +1213,28 @@ let changeSyncInFlight = false;
 let changeSyncTimer = null;
 let changeSaveInFlight = false;
 let changeFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+
+/* ---------------- RTO Wrong Received Log module state ---------------- */
+// Two-role workflow, same shape as WA Log and Change/Hold Log: whoever spots
+// the wrong item first (RTO team or NDR team) raises the entry, then someone
+// else reviews it — approve or reject. OrderID is the unique key, but unlike
+// the prototype it's only editable when creating a new entry (existing
+// entries can't rename it), matching the rest of the app's convention.
+let rtoWrongReceived = [];
+let reviewSlaDays = 2; // "flag an entry not reviewed within N days"
+let rtowrPendingChanges = {};
+let rtowrSyncInFlight = false;
+let rtowrSyncTimer = null;
+let rtowrSaveInFlight = false;
+let rtowrFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function rtowrTeamLabel(t){ return {RTO_TEAM:'📦 RTO Team',NDR_TEAM:'📝 NDR Team'}[t] || t; }
+function daysSinceLoggedRtowr_(o){
+  if(!o.date) return 0;
+  const d = parseD(o.date);
+  if(!d || isNaN(d.getTime())) return 0;
+  return Math.floor((TODAY - d)/(1000*60*60*24));
+}
+function daysOverdueRtowr_(o){ return daysSinceLoggedRtowr_(o) - reviewSlaDays; }
 function changeTypeLabel(t){
   return {ADDRESS_CHANGE:'📍 Address Change',ITEM_CHANGE:'🔁 Item Change',CANCEL:'🛑 Cancel',OTHER:'💬 Other'}[t] || t;
 }
@@ -1170,6 +1296,12 @@ function loadLocalCache(){
     if(s && s.DISPATCH_NOTIFY_PHONE) dispatchNotifyPhone = s.DISPATCH_NOTIFY_PHONE;
     if(s && s.DISPATCH_GROUP_LINK) dispatchGroupLink = s.DISPATCH_GROUP_LINK;
   }catch(e){}
+  try{ const rw = JSON.parse(localStorage.getItem('ndr_cache_rtowr_entries')||'[]'); rtoWrongReceived = Array.isArray(rw) ? rw : []; }catch(e){ rtoWrongReceived = []; }
+  try{ rtowrPendingChanges = JSON.parse(localStorage.getItem('ndr_rtowr_pending_changes')||'{}'); }catch(e){ rtowrPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.REVIEW_SLA_DAYS) reviewSlaDays = parseInt(s.REVIEW_SLA_DAYS,10) || 2;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -1178,7 +1310,7 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays, CHECK_SLA_HOURS: checkSlaHours, DISPATCH_NOTIFY_PHONE: dispatchNotifyPhone, DISPATCH_GROUP_LINK: dispatchGroupLink})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays, CHECK_SLA_HOURS: checkSlaHours, DISPATCH_NOTIFY_PHONE: dispatchNotifyPhone, DISPATCH_GROUP_LINK: dispatchGroupLink, REVIEW_SLA_DAYS: reviewSlaDays})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
@@ -1190,6 +1322,8 @@ function saveDispatchEntriesCache(){ localStorage.setItem('ndr_cache_dispatch_en
 function saveDispatchPendingChanges(){ localStorage.setItem('ndr_dispatch_pending_changes', JSON.stringify(dispatchPendingChanges)); }
 function saveChangeRequestsCache(){ localStorage.setItem('ndr_cache_change_requests', JSON.stringify(changeRequests)); }
 function saveChangePendingChanges(){ localStorage.setItem('ndr_change_pending_changes', JSON.stringify(changePendingChanges)); }
+function saveRtowrEntriesCache(){ localStorage.setItem('ndr_cache_rtowr_entries', JSON.stringify(rtoWrongReceived)); }
+function saveRtowrPendingChanges(){ localStorage.setItem('ndr_rtowr_pending_changes', JSON.stringify(rtowrPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -2801,6 +2935,230 @@ function renderAllChange(){
   updateSyncBadge();
 }
 
+/* ---------------- RTO Wrong Received Log compute/render ---------------- */
+function computeRtowrStats(data){
+  const total = data.length;
+  const pending = data.filter(o=>o.status==='PENDING').length;
+  const approved = data.filter(o=>o.status==='APPROVED').length;
+  const rejected = data.filter(o=>o.status==='REJECTED').length;
+  const decided = approved + rejected;
+  const rate = decided ? Math.round((approved/decided)*100) : 0;
+  return {total, pending, approved, rejected, rate};
+}
+function renderRtowrStats(){
+  const s = computeRtowrStats(rtoWrongReceived);
+  document.getElementById('rtowrStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Entries</div><div class="value">${s.total}</div><div class="sub">in this log</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending Review 🔁</div><div class="value">${s.pending}</div><div class="sub">not yet reviewed</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Approved ✅</div><div class="value">${s.approved}</div><div class="sub">confirmed wrong item</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Rejected ✕</div><div class="value">${s.rejected}</div><div class="sub">turned out fine</div></div>
+    <div class="stat-card rate"><div class="label">Approval Rate</div><div class="value">${s.rate}%</div><div class="sub">approved ÷ decided entries</div></div>
+  `;
+}
+function renderRtowrAlerts(){
+  const overdue = rtoWrongReceived.filter(o=> o.status==='PENDING' && daysOverdueRtowr_(o) >= 0)
+                              .sort((a,b)=> daysOverdueRtowr_(b)-daysOverdueRtowr_(a));
+  document.getElementById('rtowrAlertCount').textContent = overdue.length ? `${overdue.length} overdue for review` : '';
+  const box = document.getElementById('rtowrAlertScroller');
+  if(!overdue.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing waiting — every pending entry is within ${reviewSlaDays} day(s).</div>`;
+    return;
+  }
+  box.innerHTML = overdue.map(o=>{
+    const days = daysSinceLoggedRtowr_(o);
+    return `
+    <div class="alert-card">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${rtowrTeamLabel(o.team)} · ${escapeHtml(o.raisedBy)}</div>
+      <div class="stale">Raised ${days} day${days===1?'':'s'} ago — no review yet</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openRtowrDrawerById('${escapeHtml(o.id)}')">Open</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeRtowrTeamBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.team || 'RTO_TEAM';
+    if(!map[r]) map[r] = {reason:r, count:0, done:0, pending:0};
+    map[r].count++;
+    if(o.status!=='PENDING') map[r].done++; else map[r].pending++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderRtowrReasonChart(){
+  const breakdown = computeRtowrTeamBreakdown(rtoWrongReceived);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('rtowrReasonChart').innerHTML = breakdown.map(b=>{
+    const pendingRate = b.count ? Math.round((b.pending/b.count)*100) : 0;
+    const isLeak = pendingRate >= 60 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${rtowrTeamLabel(b.reason)}">${rtowrTeamLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${b.pending} open</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const s = computeRtowrStats(rtoWrongReceived);
+  let callouts = '';
+  if(s.pending > 0){
+    callouts += `<div class="callout"><b>${s.pending} entr${s.pending>1?'ies are':'y is'}</b> still awaiting review right now.</div>`;
+  } else {
+    callouts += `<div class="callout">No entries are currently pending review.</div>`;
+  }
+  const topTeam = breakdown[0];
+  if(topTeam){
+    callouts += `<div class="callout"><b>${rtowrTeamLabel(topTeam.reason)}</b> raises the most wrong-received flags (${topTeam.count} cases) so far.</div>`;
+  }
+  document.getElementById('rtowrInsightCallouts').innerHTML = callouts;
+}
+function computeRtowrDailyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = o.date || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, done:0, pending:0};
+    map[k].total++;
+    if(o.status!=='PENDING') map[k].done++; else map[k].pending++;
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderRtowrMonthlyBreakdown(){
+  const days = computeRtowrDailyBreakdown(rtoWrongReceived);
+  let prevRate = null;
+  const rows = days.map(m=>{
+    const rate = m.total ? Math.round((m.done/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':dayLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.done} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div></div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('rtowrMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Day</div><div>Total</div><div>Reviewed</div><div>Open</div><div></div><div>Rate</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated entries yet.</div>'}
+  `;
+}
+function computeRtowrTeamLeaderboard(data, team){
+  const map = {};
+  data.filter(o=>o.team===team).forEach(o=>{
+    const a = o.raisedBy || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0, approved:0, rejected:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='APPROVED') map[a].approved++;
+    else if(o.status==='REJECTED') map[a].rejected++;
+    else map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    const rateA = a.assigned ? a.approved/a.assigned : 0;
+    const rateB = b.assigned ? b.approved/b.assigned : 0;
+    return rateB - rateA;
+  });
+}
+function renderRtowrTeamLeaderboard(elId, team){
+  const lb = computeRtowrTeamLeaderboard(rtoWrongReceived, team);
+  const rows = lb.map((a,i)=>{
+    const decided = a.approved + a.rejected;
+    const rate = decided ? Math.round((a.approved/decided)*100) : null;
+    const barClass = rate===null ? '' : rate>=60 ? '' : rate>=30 ? 'low' : 'crit';
+    const isTop = i===0 && rate!==null && a.assigned>0;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.approved} ✅</div>
+        <div style="color:var(--red)">${a.rejected} ✕</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById(elId).innerHTML = `
+    <div class="lb-grid head"><div>Person</div><div>Raised</div><div>Approved</div><div>Rejected</div><div>Approval rate</div><div></div></div>
+    ${rows}
+  `;
+}
+function applyRtowrFilters(){
+  return rtoWrongReceived.filter(o=>{
+    if(rtowrFilters.status!=='ALL' && o.status!==rtowrFilters.status) return false;
+    if(rtowrFilters.priority==='HIGH' && !(o.status==='PENDING' && daysOverdueRtowr_(o) >= 0)) return false;
+    if(rtowrFilters.reason!=='ALL' && o.team!==rtowrFilters.reason) return false;
+    if(rtowrFilters.agent!=='ALL' && (o.raisedBy||'Unassigned')!==rtowrFilters.agent) return false;
+    if(rtowrFilters.month!=='ALL' && o.date!==rtowrFilters.month) return false;
+    if(rtowrFilters.search){
+      const s = rtowrFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.awb} ${o.remark}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderRtowrReasonFilterOptions(){
+  const agentSel = document.getElementById('rtowrAgentFilter');
+  const agentsInData = [...new Set([...AGENTS, ...rtoWrongReceived.map(o=>o.raisedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  agentSel.innerHTML = '<option value="ALL">All people</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = rtowrFilters.agent;
+
+  const monthSel = document.getElementById('rtowrMonthFilter');
+  const daysInData = [...new Set(rtoWrongReceived.map(o=>o.date).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All days</option>' + daysInData.map(k=>`<option value="${k}">${dayLabel(k)}</option>`).join('');
+  monthSel.value = rtowrFilters.month;
+}
+function rtowrStatusStamp(o){
+  if(o.status==='APPROVED') return `<span class="stamp delivered">✓ APPROVED</span>`;
+  if(o.status==='REJECTED') return `<span class="stamp rto">✕ REJECTED</span>`;
+  return `<span class="stamp pending">🔁 PENDING</span>`;
+}
+function renderRtowrTable(){
+  const data = applyRtowrFilters();
+  const body = document.getElementById('rtowrTableBody');
+  document.getElementById('rtowrEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>{
+    return `
+    <tr onclick="openRtowrDrawerById('${escapeHtml(o.id)}')">
+      <td>${o.date || ''}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${rtowrPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.awb)}</td>
+      <td>${rtowrTeamLabel(o.team)}</td>
+      <td>${escapeHtml(o.raisedBy)}</td>
+      <td class="feedback-cell" title="${escapeHtml(o.remark)}">${escapeHtml(o.remark) || '<span style="color:#d3b9be">—</span>'}</td>
+      <td>${rtowrStatusStamp(o)}</td>
+      <td>${o.reviewedDate ? escapeHtml(o.reviewedDate) + (o.reviewedBy ? ' · ' + escapeHtml(o.reviewedBy) : '') : '<span style="color:var(--slate-soft)">—</span>'}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="Open" onclick="openRtowrDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `;
+  }).join('');
+}
+function renderAllRtowr(){
+  renderRtowrStats();
+  renderRtowrAlerts();
+  renderRtowrReasonChart();
+  renderRtowrMonthlyBreakdown();
+  renderRtowrTeamLeaderboard('rtowrExecLeaderboard', 'RTO_TEAM');
+  renderRtowrTeamLeaderboard('rtowrAgentLeaderboard', 'NDR_TEAM');
+  renderRtowrReasonFilterOptions();
+  renderRtowrTable();
+  updateSyncBadge();
+}
+
 /* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
@@ -2810,14 +3168,16 @@ function switchModule(module){
   document.getElementById('waView').style.display = module==='wa' ? '' : 'none';
   document.getElementById('dispatchView').style.display = module==='dispatch' ? '' : 'none';
   document.getElementById('changeView').style.display = module==='change' ? '' : 'none';
+  document.getElementById('rtowrView').style.display = module==='rtowr' ? '' : 'none';
   document.getElementById('railNdr').classList.toggle('active', module==='ndr');
   document.getElementById('railRto').classList.toggle('active', module==='rto');
   document.getElementById('railReturns').classList.toggle('active', module==='returns');
   document.getElementById('railWa').classList.toggle('active', module==='wa');
   document.getElementById('railDispatch').classList.toggle('active', module==='dispatch');
   document.getElementById('railChange').classList.toggle('active', module==='change');
-  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log', change:'Order Change & Hold Log' };
-  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch', change:'+ Log Change Request' };
+  document.getElementById('railRtowr').classList.toggle('active', module==='rtowr');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log', change:'Order Change & Hold Log', rtowr:'RTO Wrong Received Log' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch', change:'+ Log Change Request', rtowr:'+ Log Wrong Received' };
   document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
   document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
   if(module==='rto') renderAllRto();
@@ -2825,6 +3185,7 @@ function switchModule(module){
   else if(module==='wa') renderAllWa();
   else if(module==='dispatch') renderAllDispatch();
   else if(module==='change') renderAllChange();
+  else if(module==='rtowr') renderAllRtowr();
   else renderAll();
 }
 
@@ -4205,6 +4566,249 @@ function onChangeSyncFailure(err){
   scheduleChangeSyncSoon(15000);
 }
 
+/* ---------------- RTO Wrong Received Log drawer + sync ---------------- */
+function openRtowrDrawerById(id){
+  const o = rtoWrongReceived.find(x=>x.id===id);
+  if(o) openRtowrDrawer(o);
+}
+function openRtowrDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'rtowr';
+  const o = order;
+  const isNewEntry = order.id === '__new__';
+  // Raised-by / reviewed-by both draw from the full AGENTS list rather than
+  // the prototype's hardcoded RTO_TEAM/NDR_TEAM member arrays — same
+  // simplification already used for the Change/Hold Log's role dropdowns,
+  // so this module doesn't need its own per-user "team" field like WA Log's
+  // WaTeam column.
+  const raisedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.raisedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const reviewedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.reviewedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">${escapeHtml(o.awb) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+
+      <div class="role-section exec">
+        <div class="role-header exec-h"><span class="role-badge">1</span>Entry raised</div>
+        <div class="field-group">
+          <label>Date</label>
+          <input type="date" id="d_date" value="${o.date||''}">
+        </div>
+        <div class="field-group">
+          <label>AWB</label>
+          <input id="d_awb" placeholder="AWB / tracking number" value="${escapeHtml(o.awb)}">
+        </div>
+        <div class="field-group">
+          <label>Raised by team</label>
+          <select id="d_team">
+            <option value="RTO_TEAM" ${o.team==='RTO_TEAM'?'selected':''}>📦 RTO Team</option>
+            <option value="NDR_TEAM" ${o.team==='NDR_TEAM'?'selected':''}>📝 NDR Team</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Raised by</label>
+          <select id="d_raisedBy">
+            <option value="Unassigned" ${!o.raisedBy?'selected':''}>Unassigned</option>
+            ${raisedByOptions}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Remark</label>
+          <textarea id="d_remark">${escapeHtml(o.remark)}</textarea>
+        </div>
+      </div>
+
+      <div class="role-section ndr">
+        <div class="role-header ndr-h"><span class="role-badge">2</span>Review</div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="d_status">
+            <option value="PENDING" ${o.status==='PENDING'?'selected':''}>🔁 Pending</option>
+            <option value="APPROVED" ${o.status==='APPROVED'?'selected':''}>✓ Approved</option>
+            <option value="REJECTED" ${o.status==='REJECTED'?'selected':''}>✕ Rejected</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Reviewed by</label>
+          <select id="d_reviewedBy">
+            <option value="" ${!o.reviewedBy?'selected':''}>— Not yet reviewed —</option>
+            ${reviewedByOptions}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Reviewed on</label>
+          <input type="date" id="d_reviewedDate" value="${o.reviewedDate||''}">
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveRtowrDrawer()">Save changes</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the RTO Wrong Received Log sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  // No applyDrawerLockIfNeeded() call here on purpose — same reasoning as WA
+  // Log and the Change/Hold Log: whoever raises the entry is meant to be
+  // reviewed by a different person, so locking it to the creator would
+  // break the review half of the workflow.
+  if(isNewEntry){
+    const dateField = document.getElementById('d_date');
+    dateField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+    const d_idField = document.getElementById('d_id');
+    if(d_idField) d_idField.focus();
+  }
+}
+function saveRtowrDrawer(){
+  if(rtowrSaveInFlight) return; // swallow a duplicate/ghost click instead of creating a second row
+  rtowrSaveInFlight = true;
+  try {
+    const o = rtoWrongReceived.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(rtoWrongReceived.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already has an RTO wrong-received entry logged. Open the existing entry instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    const prevStatus = o.status;
+    o.date = document.getElementById('d_date').value;
+    o.awb = document.getElementById('d_awb').value;
+    o.team = document.getElementById('d_team').value;
+    o.raisedBy = document.getElementById('d_raisedBy').value;
+    o.remark = document.getElementById('d_remark').value;
+    o.status = document.getElementById('d_status').value;
+    o.reviewedBy = document.getElementById('d_reviewedBy').value;
+    let reviewedDate = document.getElementById('d_reviewedDate').value;
+    if(prevStatus==='PENDING' && o.status!=='PENDING' && !reviewedDate){
+      reviewedDate = TODAY.toISOString().slice(0,10);
+    }
+    o.reviewedDate = reviewedDate;
+
+    queueRtowrChange(o, isNewEntry);
+    saveRtowrEntriesCache();
+    closeDrawer();
+    renderAllRtowr();
+    showToast(isNewEntry ? 'Entry logged — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveRtowrDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  } finally {
+    rtowrSaveInFlight = false;
+  }
+}
+function openNewRtowrEntry(){
+  const todayStr = TODAY.toISOString().slice(0,10);
+  const defaultRaisedBy = AGENTS.includes(currentUser.displayName) ? currentUser.displayName : (AGENTS[0] || 'Unassigned');
+  const blank = {id:'__new__', awb:'', date:todayStr, team:'RTO_TEAM', raisedBy:defaultRaisedBy, remark:'', status:'PENDING', reviewedBy:'', reviewedDate:''};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'rtowr';
+  rtoWrongReceived.push(blank);
+  openRtowrDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New RTO wrong-received entry';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+}
+function exportRtowrCSV(){
+  const data = applyRtowrFilters();
+  const headers = ['Date','Order ID','AWB','Raised By Team','Raised By','Remark','Status','Reviewed By','Reviewed On'];
+  const rows = data.map(o=>[o.date,o.id,o.awb,rtowrTeamLabel(o.team),o.raisedBy,o.remark,o.status,o.reviewedBy,o.reviewedDate]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rto-wrong-received-log-export.csv';
+  a.click();
+}
+function queueRtowrChange(order, isNew){
+  const wasNew = rtowrPendingChanges[order.id] && rtowrPendingChanges[order.id].isNew;
+  rtowrPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveRtowrPendingChanges();
+  updateSyncBadge();
+  scheduleRtowrSyncSoon(400);
+}
+function scheduleRtowrSyncSoon(delay){
+  clearTimeout(rtowrSyncTimer);
+  rtowrSyncTimer = setTimeout(attemptSyncRtowr, delay || 1500);
+}
+function attemptSyncRtowr(){
+  const ids = Object.keys(rtowrPendingChanges);
+  if(!ids.length || rtowrSyncInFlight || !authToken) return;
+  rtowrSyncInFlight = true;
+  const batch = ids.map(id => rtowrPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncRtowr', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      rtowrSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleRtowrSyncSoon(15000);
+        return;
+      }
+      onRtowrSyncSuccess(res, batch);
+    })
+    .catch(err => { rtowrSyncInFlight=false; onRtowrSyncFailure(err); });
+}
+function onRtowrSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleRtowrSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = rtowrPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete rtowrPendingChanges[orderId];
+  });
+  (res.rejected||[]).forEach(r=>{
+    if(rtowrPendingChanges[r.orderId]) delete rtowrPendingChanges[r.orderId];
+    if(r.duplicate){
+      rtoWrongReceived = rtoWrongReceived.filter(o=>o.id!==r.orderId);
+    }
+    console.warn('RTO Wrong Received Log sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = rtoWrongReceived.findIndex(x=>x.id===o.id);
+    if(idx>-1) rtoWrongReceived[idx] = Object.assign({}, rtoWrongReceived[idx], o);
+    else rtoWrongReceived.push(o);
+  });
+  saveRtowrPendingChanges();
+  saveRtowrEntriesCache();
+  lastSyncTime = new Date();
+  renderAllRtowr();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(Object.keys(rtowrPendingChanges).length) scheduleRtowrSyncSoon(4000);
+}
+function onRtowrSyncFailure(err){
+  console.warn('RTO Wrong Received Log sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleRtowrSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -4213,7 +4817,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -4345,6 +4949,18 @@ function onBootstrapSuccess(res){
   }
   changeRequests = mergedChange;
 
+  // Same merge + in-progress-draft protection for the RTO Wrong Received Log module.
+  const serverRtowr = res.rtoWrongReceived || [];
+  const mergedRtowr = serverRtowr.map(so => rtowrPendingChanges[so.id] ? Object.assign({}, so, rtowrPendingChanges[so.id].payload) : so);
+  Object.keys(rtowrPendingChanges).forEach(id=>{
+    if(!mergedRtowr.find(o=>o.id===id)) mergedRtowr.push(rtowrPendingChanges[id].payload);
+  });
+  const inProgressRtowrDraft = rtoWrongReceived.find(o=>o.id==='__new__');
+  if(inProgressRtowrDraft && !mergedRtowr.find(o=>o.id==='__new__')){
+    mergedRtowr.push(inProgressRtowrDraft);
+  }
+  rtoWrongReceived = mergedRtowr;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); computeWaTeams_(res.agents); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -4386,6 +5002,11 @@ function onBootstrapSuccess(res){
     const groupInput = document.getElementById('changeDispatchGroupLink');
     if(groupInput) groupInput.value = dispatchGroupLink;
   }
+  if(res.settings && res.settings.REVIEW_SLA_DAYS){
+    reviewSlaDays = parseInt(res.settings.REVIEW_SLA_DAYS,10) || 2;
+    const rtowrSlaInput = document.getElementById('rtowrSlaDays');
+    if(rtowrSlaInput) rtowrSlaInput.value = reviewSlaDays;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
@@ -4394,18 +5015,21 @@ function onBootstrapSuccess(res){
   saveWaIssuesCache();
   saveDispatchEntriesCache();
   saveChangeRequestsCache();
+  saveRtowrEntriesCache();
   renderAll();
   renderAllRto();
   renderAllRed();
   renderAllWa();
   renderAllDispatch();
   renderAllChange();
+  renderAllRtowr();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
   if(Object.keys(waPendingChanges).length) attemptSyncWa();
   if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch();
   if(Object.keys(changePendingChanges).length) attemptSyncChange();
+  if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr();
 }
 
 function queueChange(order, isNew){
@@ -4510,7 +5134,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -4569,6 +5193,12 @@ function pushDispatchNotifyPhoneSetting(){
 function pushDispatchGroupLinkSetting(){
   if(!authToken) return;
   apiPost('setSetting', { key:'DISPATCH_GROUP_LINK', value: dispatchGroupLink })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushReviewSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'REVIEW_SLA_DAYS', value: reviewSlaDays })
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
@@ -4784,6 +5414,7 @@ function closeDrawer(){
     else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='rtowr') rtoWrongReceived = rtoWrongReceived.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -4984,6 +5615,7 @@ function bindEvents(){
     else if(currentModule==='wa') exportWaCSV();
     else if(currentModule==='dispatch') exportDispatchCSV();
     else if(currentModule==='change') exportChangeCSV();
+    else if(currentModule==='rtowr') exportRtowrCSV();
     else exportCSV();
   });
   document.getElementById('newBtn').addEventListener('click', ()=>{
@@ -4992,6 +5624,7 @@ function bindEvents(){
     else if(currentModule==='wa') openNewWaEntry();
     else if(currentModule==='dispatch') openNewDispatchEntry();
     else if(currentModule==='change') openNewChangeEntry();
+    else if(currentModule==='rtowr') openNewRtowrEntry();
     else openNewEntry();
   });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
@@ -5135,6 +5768,32 @@ function bindEvents(){
     pushDispatchGroupLinkSetting();
   });
 
+  // ---- RTO Wrong Received Log toolbar ----
+  document.getElementById('rtowrSearchInput').addEventListener('input', e=>{ rtowrFilters.search = e.target.value; renderRtowrTable(); });
+  document.getElementById('rtowrStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#rtowrStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    rtowrFilters.status = chip.dataset.status;
+    renderRtowrTable();
+  });
+  document.getElementById('rtowrPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    rtowrFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderRtowrTable();
+  });
+  document.getElementById('rtowrReasonFilter').addEventListener('change', e=>{ rtowrFilters.reason = e.target.value; renderRtowrTable(); });
+  document.getElementById('rtowrAgentFilter').addEventListener('change', e=>{ rtowrFilters.agent = e.target.value; renderRtowrTable(); });
+  document.getElementById('rtowrMonthFilter').addEventListener('change', e=>{ rtowrFilters.month = e.target.value; renderRtowrTable(); });
+  document.getElementById('rtowrSlaDays').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    reviewSlaDays = (v && v > 0) ? v : 2;
+    saveSettingsCache();
+    renderRtowrAlerts();
+    pushReviewSlaSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('overlay').addEventListener('click', ()=>{
@@ -5144,13 +5803,14 @@ function bindEvents(){
       else if(activeDrawerModule==='wa') waIssues = waIssues.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='rtowr') rtoWrongReceived = rtoWrongReceived.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); attemptSyncRtowr(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
@@ -5158,6 +5818,7 @@ function bindEvents(){
   setInterval(()=>{ if(Object.keys(waPendingChanges).length) attemptSyncWa(); }, 5000);
   setInterval(()=>{ if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch(); }, 5000);
   setInterval(()=>{ if(Object.keys(changePendingChanges).length) attemptSyncChange(); }, 5000);
+  setInterval(()=>{ if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -5171,12 +5832,14 @@ function startApp(){
   document.getElementById('changeSlaHours').value = checkSlaHours;
   document.getElementById('changeDispatchPhone').value = dispatchNotifyPhone;
   document.getElementById('changeDispatchGroupLink').value = dispatchGroupLink;
+  document.getElementById('rtowrSlaDays').value = reviewSlaDays;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
   renderAllRed();
   renderAllWa();
   renderAllDispatch();
   renderAllChange();
+  renderAllRtowr();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
