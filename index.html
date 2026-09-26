@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-24.1">
+<meta name="app-version" content="2026-09-26.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -236,6 +236,21 @@
   .add-user-form button{grid-column:span 2;padding:9px;border-radius:8px;}
   .modal-close-row{display:flex;justify-content:flex-end;margin-top:16px;}
 
+  /* ---------- Global search / order journey modal ---------- */
+  .global-search{flex:1;min-width:180px;max-width:260px;position:relative;}
+  .global-search input{width:100%;padding:8px 12px 8px 30px;border:1px solid var(--line);border-radius:20px;font-size:13px;background:#fff;}
+  .global-search::before{content:'⌕';position:absolute;left:11px;top:7px;color:var(--slate-soft);font-size:14px;}
+  .journey-modal-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(13,19,38,.45);}
+  .journey-card{max-width:600px;}
+  .journey-step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .journey-step:last-child{border-bottom:none;}
+  .journey-dot{width:34px;height:34px;border-radius:50%;background:var(--rose-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .journey-content{flex:1;min-width:0;}
+  .journey-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+  .journey-module{font-weight:700;font-size:12.5px;color:var(--slate);}
+  .journey-summary{font-size:13px;color:var(--slate);margin-bottom:4px;word-break:break-word;}
+  .journey-meta{font-size:11px;color:var(--slate-soft);margin-bottom:6px;}
+
   @media (max-width: 980px){
     .app{grid-template-columns:1fr;}
     .rail{flex-direction:row;position:static;height:auto;width:100%;justify-content:flex-start;overflow-x:auto;padding:10px 14px;}
@@ -323,6 +338,19 @@
   </div>
 </div>
 
+<!-- ORDER JOURNEY MODAL (global search) -->
+<div class="overlay" id="journeyOverlay"></div>
+<div class="journey-modal-wrap" id="journeyModal" style="display:none;">
+  <div class="modal-card journey-card">
+    <h2 id="journeyTitle">Order journey</h2>
+    <div class="sub">Every entry across every module for this Order ID, oldest first.</div>
+    <div id="journeyBody"></div>
+    <div class="modal-close-row">
+      <button class="btn" onclick="closeJourneyModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="app">
   <!-- RAIL -->
   <nav class="rail">
@@ -393,6 +421,10 @@
         <span class="user-chip" id="userChip"></span>
       </div>
       <div class="topbar-actions">
+        <div class="global-search">
+          <input type="text" id="globalSearchInput" placeholder="Search any Order ID — see its full journey">
+        </div>
+        <button class="btn" id="globalSearchBtn" title="Show this order's journey across every module">🔍 Journey</button>
         <span class="offline-badge" id="offlineBadge"><span class="pip"></span>Loading…</span>
         <button class="btn" id="manageUsersBtn" style="display:none;">👤 Manage users</button>
         <button class="btn" id="exportBtn">⭳ Export CSV</button>
@@ -5213,6 +5245,109 @@ function closeManageUsers(){
   document.getElementById('usersOverlay').classList.remove('show');
   document.getElementById('usersModal').style.display = 'none';
 }
+
+/* ---------------- global search / order journey ---------------- */
+// Search across every module by Order ID and show a single chronological
+// timeline — one place to see everything that's happened to an order,
+// instead of hunting through 7 separate tabs one at a time.
+const JOURNEY_META = {
+  ndr:      { label: 'NDR — Delivery Attempt',     icon: '📦', openFnName: 'openDrawerById' },
+  rto:      { label: 'Prepaid RTO Reship',         icon: '↩️', openFnName: 'openRtoDrawerById' },
+  red:      { label: 'Return / Exchange / Damage', icon: '🔄', openFnName: 'openRedDrawerById' },
+  wa:       { label: 'WhatsApp Issue Log',         icon: '💬', openFnName: 'openWaDrawerById' },
+  dispatch: { label: 'New Item Dispatch',          icon: '🚚', openFnName: 'openDispatchDrawerById' },
+  change:   { label: 'Order Change & Hold',        icon: '📝', openFnName: 'openChangeDrawerById' },
+  rtowr:    { label: 'RTO Wrong Received',         icon: '🔁', openFnName: 'openRtowrDrawerById' }
+};
+function journeyDetail(moduleKey, o){
+  switch(moduleKey){
+    case 'ndr': {
+      const map = {PENDING:{l:'🔁 Pending',c:'pending'}, DELIVERED:{l:'✓ Delivered',c:'delivered'}, RTO:{l:'✕ RTO',c:'rto'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `Reason: ${o.reason||'—'}${o.agent?' · Agent: '+o.agent:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
+    }
+    case 'rto': {
+      const map = {PENDING:{l:'🔁 Pending',c:'pending'}, RESHIPPED:{l:'↪ Reshipped',c:'pending'}, DELIVERED:{l:'✓ Delivered',c:'delivered'}, RTO_AGAIN:{l:'↩ RTO Again',c:'rto'}, REFUNDED:{l:'💰 Refunded',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `New AWB: ${o.newAwb||'—'}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
+    }
+    case 'red': {
+      const map = {PENDING:{l:'🔁 Pending',c:'pending'}, RESOLVED:{l:'✓ Resolved',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `${o.type||'Case'}${o.remark?' — '+o.remark:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
+    }
+    case 'wa': {
+      const map = {NEW:{l:'🔁 New',c:'pending'}, IN_PROGRESS:{l:'⏳ In progress',c:'pending'}, RESOLVED:{l:'✓ Resolved',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `${o.message||'—'}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDateTime(o.loggedAt), sortTime: (parseISO_(o.loggedAt)||new Date(0)).getTime() };
+    }
+    case 'dispatch': {
+      const map = {PENDING:{l:'🔁 Pending',c:'pending'}, DISPATCHED:{l:'📦 Dispatched',c:'delivered'}, DELIVERED:{l:'✓ Delivered',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `SKU: ${o.sku||'—'}${o.trackingNumber?' · AWB: '+o.trackingNumber:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
+    }
+    case 'change': {
+      const map = {NEW:{l:'🔁 Awaiting check',c:'pending'}, RESOLVED:{l:'✓ Checked',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `${changeTypeLabel(o.changeType)}${o.details?' — '+o.details:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDateTime(o.loggedAt), sortTime: (parseISO_(o.loggedAt)||new Date(0)).getTime() };
+    }
+    case 'rtowr': {
+      const map = {PENDING:{l:'🔁 Pending',c:'pending'}, APPROVED:{l:'✓ Approved',c:'delivered'}, REJECTED:{l:'✕ Rejected',c:'rto'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `${rtowrTeamLabel(o.team)}${o.remark?' — '+o.remark:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
+    }
+  }
+}
+function buildOrderJourney(query){
+  const q = (query||'').trim().toLowerCase();
+  if(!q) return [];
+  const results = [];
+  const add = (moduleKey, o) => results.push({ moduleKey, meta: JOURNEY_META[moduleKey], openId: o.id, detail: journeyDetail(moduleKey, o) });
+  orders.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('ndr', o); });
+  rtoOrders.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('rto', o); });
+  redCases.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('red', o); });
+  waIssues.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('wa', o); });
+  // Dispatch Log's Order ID can repeat and lives in o.orderId (o.id is a
+  // separately generated unique row key) — match on orderId but still open
+  // by o.id, same as the Dispatch Log module itself does.
+  dispatchEntries.forEach(o=>{ if(o.id!=='__new__' && (o.orderId||'').toLowerCase()===q) add('dispatch', o); });
+  changeRequests.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('change', o); });
+  rtoWrongReceived.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('rtowr', o); });
+  results.sort((a,b)=> a.detail.sortTime - b.detail.sortTime);
+  return results;
+}
+function openJourneyModal(query){
+  const q = (query||'').trim();
+  if(!q){ showToast('Type an Order ID to search — e.g. OZ12345.', 'error'); return; }
+  const results = buildOrderJourney(q);
+  document.getElementById('journeyTitle').textContent = `Journey for "${q}"`;
+  const body = document.getElementById('journeyBody');
+  if(!results.length){
+    body.innerHTML = `<div class="no-alerts" style="color:var(--red);">No entries found for "${escapeHtml(q)}" in any module — check the Order ID and try again.</div>`;
+  } else {
+    body.innerHTML = results.map(r=>`
+      <div class="journey-step">
+        <div class="journey-dot">${r.meta.icon}</div>
+        <div class="journey-content">
+          <div class="journey-head">
+            <span class="journey-module">${r.meta.label}</span>
+            <span class="stamp ${r.detail.statusCls}">${r.detail.statusLabel}</span>
+          </div>
+          <div class="journey-summary">${escapeHtml(r.detail.summary)}</div>
+          <div class="journey-meta">${r.detail.dateLabel}</div>
+          <button class="mini-btn" onclick="closeJourneyModal(); ${r.meta.openFnName}('${escapeHtml(r.openId)}')">Open entry ↗</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('journeyOverlay').classList.add('show');
+  document.getElementById('journeyModal').style.display = 'flex';
+}
+function closeJourneyModal(){
+  document.getElementById('journeyOverlay').classList.remove('show');
+  document.getElementById('journeyModal').style.display = 'none';
+}
+
 function loadUsersList(){
   const box = document.getElementById('usersList');
   box.innerHTML = '<div style="color:var(--slate-soft);font-size:12.5px;">Loading…</div>';
@@ -5796,6 +5931,9 @@ function bindEvents(){
 
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
+  document.getElementById('globalSearchBtn').addEventListener('click', ()=> openJourneyModal(document.getElementById('globalSearchInput').value));
+  document.getElementById('globalSearchInput').addEventListener('keydown', e=>{ if(e.key==='Enter') openJourneyModal(e.target.value); });
+  document.getElementById('journeyOverlay').addEventListener('click', closeJourneyModal);
   document.getElementById('overlay').addEventListener('click', ()=>{
     if(activeDrawerOrder==='__new__'){
       if(activeDrawerModule==='rto') rtoOrders = rtoOrders.filter(o=>o.id!=='__new__');
