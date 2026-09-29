@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-28.1">
+<meta name="app-version" content="2026-09-29.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -162,6 +162,12 @@
   .prio-pill.normal{background:#f4e9eb;color:var(--slate-soft);}
   .wa-pip{font-size:11px;color:var(--green);font-weight:600;}
   .wa-pip.no{color:#c2a3aa;}
+  .amount-cell{font-weight:800;font-variant-numeric:tabular-nums;color:var(--slate);}
+  .proof-thumb{width:28px;height:28px;border-radius:6px;object-fit:cover;border:1px solid var(--line);cursor:pointer;display:block;}
+  .proof-missing{font-size:11px;color:#c2a3aa;}
+  .screenshot-preview img{max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--line);display:block;}
+  .screenshot-preview .empty{font-size:12px;color:var(--slate-soft);}
+  .screenshot-preview .remove-link{margin-top:6px;font-size:11.5px;padding:5px 10px;}
 
   .stamp{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px 4px 8px;border-radius:5px;border:1.5px dashed;transform:rotate(-2deg);letter-spacing:.02em;}
   .stamp.delivered{color:var(--green);border-color:var(--green);background:var(--green-soft);}
@@ -408,6 +414,12 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       RTO Check
       <span class="tag">RTO Wrong Received Log — live</span>
+    </div>
+    <div class="rail-item" id="railRefund" onclick="switchModule('refund')">
+      <div class="dot"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M12 1v22"/></svg>
+      Refund
+      <span class="tag">Refund Log — live</span>
     </div>
     <div class="rail-item disabled" style="margin-top:auto;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -1105,6 +1117,105 @@
     </div>
     </div>
     <!-- ================= /RTO WRONG RECEIVED LOG MODULE ================= -->
+
+    <!-- ================= REFUND LOG MODULE ================= -->
+    <div id="refundView" style="display:none;">
+    <!-- STATS -->
+    <div class="stats-row" id="refundStatsRow"></div>
+
+    <!-- ALERTS -->
+    <div class="alerts">
+      <div class="alerts-head">
+        <h3>💸 Refunds waiting — money owed to customers</h3>
+        <div class="sla-config">
+          <label for="refundSlaHours">Flag pending refunds not processed within</label>
+          <input type="number" id="refundSlaHours" min="1" max="240" value="24">
+          <span>hour(s)</span>
+        </div>
+        <div class="sla-config">
+          <label for="refundHighValue">🛑 Always flag refunds ≥</label>
+          <input type="text" id="refundHighValue" value="1500">
+          <span>₹ — regardless of time</span>
+        </div>
+        <span id="refundAlertCount"></span>
+      </div>
+      <div class="alert-scroller" id="refundAlertScroller"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-row">
+      <div class="panel">
+        <h3>Refund reason breakdown</h3>
+        <div id="refundReasonChart"></div>
+      </div>
+      <div class="panel">
+        <h3>What this is telling you</h3>
+        <div id="refundInsightCallouts"></div>
+      </div>
+    </div>
+
+    <!-- DAY-WISE VOLUME -->
+    <div class="panel" style="margin-bottom:22px;">
+      <h3>Day-wise volume &amp; pending amount</h3>
+      <div id="refundMonthlyBreakdown"></div>
+    </div>
+
+    <!-- TWO-ROLE LEADERBOARDS -->
+    <div class="insights-row" style="margin-bottom:22px;">
+      <div class="panel">
+        <h3>📝 Logged by (NDR team)</h3>
+        <div id="refundExecLeaderboard"></div>
+      </div>
+      <div class="panel">
+        <h3>💰 Processed by (Accounts team)</h3>
+        <div id="refundAgentLeaderboard"></div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="refundSearchInput" placeholder="Search Order ID, phone or details…">
+      </div>
+      <div class="chip-group" id="refundStatusChips">
+        <div class="chip active" data-status="ALL">All</div>
+        <div class="chip" data-status="NEW">Pending</div>
+        <div class="chip" data-status="PROCESSED">Refunded</div>
+      </div>
+      <div class="chip-group" id="refundPrioChips">
+        <div class="chip" data-prio="HIGH">💰 High value only</div>
+      </div>
+      <select class="reason-filter" id="refundMonthFilter"><option value="ALL">All days</option></select>
+      <select class="reason-filter" id="refundReasonFilter"><option value="ALL">All reasons</option></select>
+      <select class="reason-filter" id="refundAgentFilter"><option value="ALL">All processors</option></select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Logged</th>
+            <th>Order ID</th>
+            <th>Phone</th>
+            <th>Amount</th>
+            <th>Reason</th>
+            <th>Logged By</th>
+            <th>Processed By</th>
+            <th>Proof</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="refundTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="refundEmptyState" style="display:none;">
+        <div class="glyph">🔍</div>
+        No refunds match these filters — try clearing search or filters.
+      </div>
+    </div>
+    </div>
+    <!-- ================= /REFUND LOG MODULE ================= -->
   </main>
 </div>
 
@@ -1274,6 +1385,38 @@ function daysSinceLoggedRtowr_(o){
   return Math.floor((TODAY - d)/(1000*60*60*24));
 }
 function daysOverdueRtowr_(o){ return daysSinceLoggedRtowr_(o) - reviewSlaDays; }
+
+/* ---------------- Refund Log module state ---------------- */
+// Two-role workflow, same shape as WA Log / Change-Hold / RTO Wrong
+// Received: the NDR team logs a refund the moment it's agreed with the
+// customer, the Accounts team actually sends the money, uploads a
+// screenshot as proof, and marks it resolved.
+let refundRequests = [];
+let refundSlaHours = 24; // "accounts should process a refund within N hours"
+let highValueThreshold = 1500; // refunds at/above this always show in alerts, regardless of age
+let refundPendingChanges = {};
+let refundSyncInFlight = false;
+let refundSyncTimer = null;
+let refundSaveInFlight = false;
+let refundFilters = { search:'', status:'ALL', priority:'ALL', reason:'ALL', agent:'ALL', month:'ALL' };
+function refundReasonLabel(r){
+  return {DAMAGED:'Damaged Product',WRONG_ITEM:'Wrong Item Sent',NOT_DELIVERED:'Not Delivered',QUALITY_ISSUE:'Quality Issue',ORDER_CANCELLED:'Order Cancelled',OTHER:'Other'}[r] || r;
+}
+function refundMethodLabel(m){
+  return {UPI:'UPI',BANK_TRANSFER:'Bank Transfer',STORE_CREDIT:'Store Credit',ORIGINAL_PAYMENT:'Original Payment Mode'}[m] || (m || '—');
+}
+function fmtINR(n){
+  const v = Math.round(Number(n)||0);
+  return '₹' + v.toLocaleString('en-IN');
+}
+function hoursSinceRefund_(iso){
+  if(!iso) return 0;
+  const d = parseISO_(iso);
+  if(!d || isNaN(d.getTime())) return 0;
+  return (TODAY - d) / (1000*60*60);
+}
+function hoursOverdueRefund_(o){ return hoursSinceRefund_(o.loggedAt) - refundSlaHours; }
+
 function changeTypeLabel(t){
   return {ADDRESS_CHANGE:'📍 Address Change',ITEM_CHANGE:'🔁 Item Change',CANCEL:'🛑 Cancel',OTHER:'💬 Other'}[t] || t;
 }
@@ -1341,6 +1484,13 @@ function loadLocalCache(){
     const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
     if(s && s.REVIEW_SLA_DAYS) reviewSlaDays = parseInt(s.REVIEW_SLA_DAYS,10) || 2;
   }catch(e){}
+  try{ const rf = JSON.parse(localStorage.getItem('ndr_cache_refund_requests')||'[]'); refundRequests = Array.isArray(rf) ? rf : []; }catch(e){ refundRequests = []; }
+  try{ refundPendingChanges = JSON.parse(localStorage.getItem('ndr_refund_pending_changes')||'{}'); }catch(e){ refundPendingChanges = {}; }
+  try{
+    const s = JSON.parse(localStorage.getItem('ndr_cache_settings')||'null');
+    if(s && s.REFUND_SLA_HOURS) refundSlaHours = parseInt(s.REFUND_SLA_HOURS,10) || 24;
+    if(s && s.HIGH_VALUE_THRESHOLD) highValueThreshold = parseFloat(s.HIGH_VALUE_THRESHOLD) || 1500;
+  }catch(e){}
   authToken = localStorage.getItem('ndr_token') || '';
   try{
     const u = JSON.parse(localStorage.getItem('ndr_user')||'null');
@@ -1349,7 +1499,7 @@ function loadLocalCache(){
 }
 function saveOrdersCache(){ localStorage.setItem('ndr_cache_orders', JSON.stringify(orders)); }
 function saveAgentsCache(list){ localStorage.setItem('ndr_cache_agents', JSON.stringify(list)); }
-function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays, CHECK_SLA_HOURS: checkSlaHours, DISPATCH_NOTIFY_PHONE: dispatchNotifyPhone, DISPATCH_GROUP_LINK: dispatchGroupLink, REVIEW_SLA_DAYS: reviewSlaDays})); }
+function saveSettingsCache(){ localStorage.setItem('ndr_cache_settings', JSON.stringify({SLA_DAYS: slaAutoRtoDays, RESHIP_SLA_DAYS: reshipSlaDays, INITIATE_SLA_DAYS: initiateSlaDays, REMARK_SLA_HOURS: remarkSlaHours, DISPATCH_SLA_DAYS: dispatchOpenSlaDays, CHECK_SLA_HOURS: checkSlaHours, DISPATCH_NOTIFY_PHONE: dispatchNotifyPhone, DISPATCH_GROUP_LINK: dispatchGroupLink, REVIEW_SLA_DAYS: reviewSlaDays, REFUND_SLA_HOURS: refundSlaHours, HIGH_VALUE_THRESHOLD: highValueThreshold})); }
 function savePendingChanges(){ localStorage.setItem('ndr_pending_changes', JSON.stringify(pendingChanges)); }
 function saveRtoOrdersCache(){ localStorage.setItem('ndr_cache_rto_orders', JSON.stringify(rtoOrders)); }
 function saveRtoPendingChanges(){ localStorage.setItem('ndr_rto_pending_changes', JSON.stringify(rtoPendingChanges)); }
@@ -1363,6 +1513,8 @@ function saveChangeRequestsCache(){ localStorage.setItem('ndr_cache_change_reque
 function saveChangePendingChanges(){ localStorage.setItem('ndr_change_pending_changes', JSON.stringify(changePendingChanges)); }
 function saveRtowrEntriesCache(){ localStorage.setItem('ndr_cache_rtowr_entries', JSON.stringify(rtoWrongReceived)); }
 function saveRtowrPendingChanges(){ localStorage.setItem('ndr_rtowr_pending_changes', JSON.stringify(rtowrPendingChanges)); }
+function saveRefundRequestsCache(){ localStorage.setItem('ndr_cache_refund_requests', JSON.stringify(refundRequests)); }
+function saveRefundPendingChanges(){ localStorage.setItem('ndr_refund_pending_changes', JSON.stringify(refundPendingChanges)); }
 function saveSession(){
   localStorage.setItem('ndr_token', authToken);
   localStorage.setItem('ndr_user', JSON.stringify(currentUser));
@@ -3199,6 +3351,273 @@ function renderAllRtowr(){
   updateSyncBadge();
 }
 
+/* ---------------- Refund Log compute/render ---------------- */
+function computeRefundStats(data){
+  const total = data.length;
+  const pending = data.filter(o=>o.status==='NEW');
+  const done = data.filter(o=>o.status==='PROCESSED');
+  const pendingAmount = pending.reduce((sum,o)=> sum + (Number(o.amount)||0), 0);
+  const rate = total ? Math.round((done.length/total)*100) : 0;
+  return {total, pending: pending.length, done: done.length, pendingAmount, rate};
+}
+function renderRefundStats(){
+  const s = computeRefundStats(refundRequests);
+  document.getElementById('refundStatsRow').innerHTML = `
+    <div class="stat-card total"><div class="stamp-ring"></div><div class="label">Total Requests</div><div class="value">${s.total}</div><div class="sub">in this log</div></div>
+    <div class="stat-card pending"><div class="stamp-ring"></div><div class="label">Pending Refunds 🔁</div><div class="value">${s.pending}</div><div class="sub">not yet processed</div></div>
+    <div class="stat-card delivered"><div class="stamp-ring"></div><div class="label">Refunded ✅</div><div class="value">${s.done}</div><div class="sub">processed with proof</div></div>
+    <div class="stat-card rto"><div class="stamp-ring"></div><div class="label">Pending Amount 💸</div><div class="value">${fmtINR(s.pendingAmount)}</div><div class="sub">owed to customers right now</div></div>
+    <div class="stat-card rate"><div class="label">Processed Rate</div><div class="value">${s.rate}%</div><div class="sub">refunded ÷ total requests</div></div>
+  `;
+}
+function renderRefundAlerts(){
+  const highValue = refundRequests.filter(o=> o.status==='NEW' && (Number(o.amount)||0) >= highValueThreshold);
+  const highValueIds = new Set(highValue.map(o=>o.id));
+  const otherOverdue = refundRequests.filter(o=> o.status==='NEW' && !highValueIds.has(o.id) && hoursOverdueRefund_(o) >= 0)
+                              .sort((a,b)=> hoursOverdueRefund_(b)-hoursOverdueRefund_(a));
+  const urgent = [...highValue, ...otherOverdue];
+  document.getElementById('refundAlertCount').textContent = urgent.length ? `${urgent.length} refund(s) need attention` : '';
+  const box = document.getElementById('refundAlertScroller');
+  if(!urgent.length){
+    box.innerHTML = `<div class="no-alerts">✓ Nothing at risk — no high-value refunds pending, and everything else is within ${refundSlaHours}h.</div>`;
+    return;
+  }
+  box.innerHTML = urgent.map(o=>{
+    const isHighValue = highValueIds.has(o.id);
+    const hrs = Math.floor(hoursSinceRefund_(o.loggedAt));
+    const message = isHighValue
+      ? `💰 ${fmtINR(o.amount)} pending — high value, prioritise`
+      : `Pending ${hrs}h — no refund processed yet`;
+    return `
+    <div class="alert-card ${isHighValue?'stop':''}">
+      <div class="oid mono">${escapeHtml(o.id)}</div>
+      <div class="reason">${refundReasonLabel(o.reason)} · ${escapeHtml(o.phone)}</div>
+      <div class="stale">${message}</div>
+      <div style="font-size:11px;margin-top:2px;color:${isHighValue?'rgba(255,255,255,.85)':'var(--slate-soft)'};">Logged by: ${escapeHtml(o.loggedBy)}</div>
+      <div class="alert-actions">
+        <button class="mini-btn" onclick="openRefundDrawerById('${escapeHtml(o.id)}')">Open</button>
+        <button class="mini-btn" onclick="quickWhatsAppRefund('${escapeHtml(o.id)}')">WhatsApp</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+function computeRefundReasonBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const r = o.reason || 'OTHER';
+    if(!map[r]) map[r] = {reason:r, count:0, done:0, pending:0, amount:0, pendingAmount:0};
+    map[r].count++;
+    map[r].amount += Number(o.amount)||0;
+    if(o.status==='PROCESSED') map[r].done++; else { map[r].pending++; map[r].pendingAmount += Number(o.amount)||0; }
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function renderRefundReasonChart(){
+  const breakdown = computeRefundReasonBreakdown(refundRequests);
+  const max = Math.max(...breakdown.map(b=>b.count), 1);
+  document.getElementById('refundReasonChart').innerHTML = breakdown.map(b=>{
+    const pendingRate = b.count ? Math.round((b.pending/b.count)*100) : 0;
+    const isLeak = pendingRate >= 50 && b.count >= 2;
+    return `
+      <div class="reason-row">
+        <div class="reason-name" title="${refundReasonLabel(b.reason)}">${refundReasonLabel(b.reason)}</div>
+        <div class="reason-bar-track"><div class="reason-bar-fill${isLeak?' leak':''}" style="width:${(b.count/max)*100}%"></div></div>
+        <div class="reason-count">${b.count}${isLeak?` <span class="leak-tag">· ${fmtINR(b.pendingAmount)} open</span>`:''}</div>
+      </div>`;
+  }).join('');
+
+  const s = computeRefundStats(refundRequests);
+  const highValueCount = refundRequests.filter(o=> o.status==='NEW' && (Number(o.amount)||0) >= highValueThreshold).length;
+  let callouts = '';
+  if(s.pendingAmount > 0){
+    callouts += `<div class="callout"><b>${fmtINR(s.pendingAmount)}</b> is currently sitting unpaid across <b>${s.pending}</b> pending request${s.pending>1?'s':''} — that's real money still owed to customers.</div>`;
+  } else {
+    callouts += `<div class="callout">Nothing pending right now — every logged refund has been processed. 🎉</div>`;
+  }
+  if(highValueCount > 0){
+    callouts += `<div class="callout"><b>${highValueCount}</b> pending refund${highValueCount>1?'s are':' is'} ≥ ${fmtINR(highValueThreshold)} — flagged as high value in the alerts above, worth prioritising.</div>`;
+  }
+  const topReason = breakdown[0];
+  if(topReason){
+    callouts += `<div class="callout"><b>${refundReasonLabel(topReason.reason)}</b> is the most common refund reason (${topReason.count} cases, ${fmtINR(topReason.amount)} total) — worth a root-cause look if it keeps climbing.</div>`;
+  }
+  document.getElementById('refundInsightCallouts').innerHTML = callouts;
+}
+function computeRefundDailyBreakdown(data){
+  const map = {};
+  data.forEach(o=>{
+    const k = dayKey(o.loggedAt) || 'Unknown';
+    if(!map[k]) map[k] = {key:k, total:0, done:0, pending:0, pendingAmount:0};
+    map[k].total++;
+    if(o.status==='PROCESSED') map[k].done++; else { map[k].pending++; map[k].pendingAmount += Number(o.amount)||0; }
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function renderRefundMonthlyBreakdown(){
+  const days = computeRefundDailyBreakdown(refundRequests);
+  let prevRate = null;
+  const rows = days.map(m=>{
+    const rate = m.total ? Math.round((m.done/m.total)*100) : 0;
+    let trend = '<span style="color:var(--slate-soft)">baseline</span>';
+    if(prevRate !== null){
+      if(rate > prevRate) trend = `<span style="color:var(--green)">▲ +${rate-prevRate}pt</span>`;
+      else if(rate < prevRate) trend = `<span style="color:var(--red)">▼ -${prevRate-rate}pt</span>`;
+      else trend = `<span style="color:var(--slate-soft)">— flat</span>`;
+    }
+    prevRate = rate;
+    const barClass = rate>=60?'':rate>=30?'low':'crit';
+    return `
+      <div class="month-grid">
+        <div class="month-name">${m.key==='Unknown'?'Unknown':dayLabel(m.key)}</div>
+        <div>${m.total}</div>
+        <div style="color:var(--green)">${m.done} ✅</div>
+        <div style="color:var(--amber)">${m.pending} 🔁</div>
+        <div style="color:var(--red);font-weight:700;">${m.pendingAmount ? fmtINR(m.pendingAmount) : '—'}</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate}%"></div></div>
+        <div style="font-size:11px;text-align:right;">${rate}% <br>${trend}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('refundMonthlyBreakdown').innerHTML = `
+    <div class="month-grid head"><div>Day</div><div>Total</div><div>Refunded</div><div>Pending</div><div>₹ Pending</div><div>Rate</div><div>vs. prior</div></div>
+    ${rows || '<div style="padding:10px 0;color:var(--slate-soft);">No dated requests yet.</div>'}
+  `;
+}
+function renderRefundExecLeaderboard(){
+  const map = {};
+  refundRequests.forEach(o=>{
+    const a = o.loggedBy || 'Unassigned';
+    if(!map[a]) map[a] = {agent:a, assigned:0};
+    map[a].assigned++;
+  });
+  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+    <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
+      <div class="lb-name">${escapeHtml(a.agent)}</div>
+      <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*15)}%"></div></div>
+      <div class="lb-rate">${a.assigned} logged</div>
+    </div>`).join('');
+  document.getElementById('refundExecLeaderboard').innerHTML = `
+    <div class="lb-grid head" style="grid-template-columns:130px 1fr 60px;"><div>NDR Person</div><div>Volume</div><div></div></div>
+    ${rows}
+  `;
+}
+function computeRefundAgentLeaderboard(data){
+  const map = {};
+  data.forEach(o=>{
+    if(!o.processedBy) return;
+    const a = o.processedBy;
+    if(!map[a]) map[a] = {agent:a, assigned:0, done:0, pending:0};
+    map[a].assigned++;
+    if(o.status==='PROCESSED') map[a].done++; else map[a].pending++;
+  });
+  return Object.values(map).sort((a,b)=>{
+    const rateA = a.assigned ? a.done/a.assigned : 0;
+    const rateB = b.assigned ? b.done/b.assigned : 0;
+    return rateB - rateA;
+  });
+}
+function renderRefundAgentLeaderboard(){
+  const lb = computeRefundAgentLeaderboard(refundRequests);
+  const rows = lb.map((a,i)=>{
+    const rate = a.assigned ? Math.round((a.done/a.assigned)*100) : null;
+    const barClass = rate===null ? '' : rate>=60 ? '' : rate>=30 ? 'low' : 'crit';
+    const isTop = i===0 && rate!==null && a.assigned>0;
+    return `
+      <div class="lb-grid">
+        <div class="lb-name">${isTop?'🏆 ':''}${escapeHtml(a.agent)}</div>
+        <div>${a.assigned} total</div>
+        <div style="color:var(--green)">${a.done} ✅</div>
+        <div style="color:var(--amber)">${a.pending} 🔁</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill ${barClass}" style="width:${rate||0}%"></div></div>
+        <div class="lb-rate">${rate===null?'—':rate+'%'}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('refundAgentLeaderboard').innerHTML = `
+    <div class="lb-grid head"><div>Accounts Person</div><div>Assigned</div><div>Refunded</div><div>Pending</div><div>Processed rate</div><div></div></div>
+    ${rows}
+  `;
+}
+function applyRefundFilters(){
+  return refundRequests.filter(o=>{
+    if(refundFilters.status!=='ALL' && o.status!==refundFilters.status) return false;
+    if(refundFilters.priority==='HIGH' && (Number(o.amount)||0) < highValueThreshold) return false;
+    if(refundFilters.reason!=='ALL' && o.reason!==refundFilters.reason) return false;
+    if(refundFilters.agent!=='ALL' && (o.processedBy||'Unassigned')!==refundFilters.agent) return false;
+    if(refundFilters.month!=='ALL' && dayKey(o.loggedAt)!==refundFilters.month) return false;
+    if(refundFilters.search){
+      const s = refundFilters.search.toLowerCase();
+      const hay = `${o.id} ${o.phone} ${o.details}`.toLowerCase();
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function renderRefundReasonFilterOptions(){
+  const sel = document.getElementById('refundReasonFilter');
+  const reasons = [...new Set(refundRequests.map(o=>o.reason).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="ALL">All reasons</option>' + reasons.map(r=>`<option value="${escapeHtml(r)}">${refundReasonLabel(r)}</option>`).join('');
+  sel.value = refundFilters.reason;
+
+  const agentSel = document.getElementById('refundAgentFilter');
+  const agentsInData = [...new Set([...AGENTS, ...refundRequests.map(o=>o.processedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  agentSel.innerHTML = '<option value="ALL">All processors</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  agentSel.value = refundFilters.agent;
+
+  const monthSel = document.getElementById('refundMonthFilter');
+  const daysInData = [...new Set(refundRequests.map(o=>dayKey(o.loggedAt)).filter(Boolean))].sort();
+  monthSel.innerHTML = '<option value="ALL">All days</option>' + daysInData.map(k=>`<option value="${k}">${dayLabel(k)}</option>`).join('');
+  monthSel.value = refundFilters.month;
+}
+function refundStatusStamp(o){
+  if(o.status==='PROCESSED') return `<span class="stamp delivered">✓ REFUNDED</span>`;
+  if((Number(o.amount)||0) >= highValueThreshold) return `<span class="stamp rto">💰 HIGH VALUE</span>`;
+  return `<span class="stamp pending">🔁 PENDING</span>`;
+}
+function refundProofCell(o){
+  if(o.screenshot && o.screenshot.fileId){
+    return `<img class="proof-thumb" src="https://drive.google.com/thumbnail?id=${escapeHtml(o.screenshot.fileId)}&sz=w150" title="Click to view full screenshot" onclick="event.stopPropagation(); window.open('${escapeHtml(o.screenshot.url)}','_blank')">`;
+  }
+  return `<span class="proof-missing">— none —</span>`;
+}
+function renderRefundTable(){
+  const data = applyRefundFilters();
+  const body = document.getElementById('refundTableBody');
+  document.getElementById('refundEmptyState').style.display = data.length ? 'none' : 'block';
+  body.innerHTML = data.map(o=>{
+    const isHighValueRisk = o.status==='NEW' && (Number(o.amount)||0) >= highValueThreshold;
+    return `
+    <tr onclick="openRefundDrawerById('${escapeHtml(o.id)}')" class="${isHighValueRisk?'row-stop':''}">
+      <td>${fmtDateTime(o.loggedAt)}</td>
+      <td class="oid-cell">${escapeHtml(o.id)}${refundPendingChanges[o.id]?' <span title="Not yet synced" style="color:var(--amber)">●</span>':''}</td>
+      <td class="awb-cell">${escapeHtml(o.phone)}</td>
+      <td class="amount-cell">${fmtINR(o.amount)}</td>
+      <td>${refundReasonLabel(o.reason)}</td>
+      <td>${escapeHtml(o.loggedBy)}</td>
+      <td>${o.processedBy ? escapeHtml(o.processedBy) : '<span style="color:var(--red);font-weight:600;">Not yet</span>'}</td>
+      <td onclick="event.stopPropagation()">${refundProofCell(o)}</td>
+      <td>${refundStatusStamp(o)}</td>
+      <td onclick="event.stopPropagation()">
+        <div class="row-actions">
+          <div class="icon-btn" title="WhatsApp customer" onclick="quickWhatsAppRefund('${escapeHtml(o.id)}')">💬</div>
+          <div class="icon-btn" title="Open" onclick="openRefundDrawerById('${escapeHtml(o.id)}')">↗</div>
+        </div>
+      </td>
+    </tr>
+  `;
+  }).join('');
+}
+function renderAllRefund(){
+  renderRefundStats();
+  renderRefundAlerts();
+  renderRefundReasonChart();
+  renderRefundMonthlyBreakdown();
+  renderRefundExecLeaderboard();
+  renderRefundAgentLeaderboard();
+  renderRefundReasonFilterOptions();
+  renderRefundTable();
+  updateSyncBadge();
+}
+
 /* ---------------- module switching (rail nav) ---------------- */
 function switchModule(module){
   currentModule = module;
@@ -3209,6 +3628,7 @@ function switchModule(module){
   document.getElementById('dispatchView').style.display = module==='dispatch' ? '' : 'none';
   document.getElementById('changeView').style.display = module==='change' ? '' : 'none';
   document.getElementById('rtowrView').style.display = module==='rtowr' ? '' : 'none';
+  document.getElementById('refundView').style.display = module==='refund' ? '' : 'none';
   document.getElementById('railNdr').classList.toggle('active', module==='ndr');
   document.getElementById('railRto').classList.toggle('active', module==='rto');
   document.getElementById('railReturns').classList.toggle('active', module==='returns');
@@ -3216,8 +3636,9 @@ function switchModule(module){
   document.getElementById('railDispatch').classList.toggle('active', module==='dispatch');
   document.getElementById('railChange').classList.toggle('active', module==='change');
   document.getElementById('railRtowr').classList.toggle('active', module==='rtowr');
-  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log', change:'Order Change & Hold Log', rtowr:'RTO Wrong Received Log' };
-  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch', change:'+ Log Change Request', rtowr:'+ Log Wrong Received' };
+  document.getElementById('railRefund').classList.toggle('active', module==='refund');
+  const titles = { ndr:'NDR Control Tower', rto:'Prepaid RTO Reship Tracker', returns:'Return, Exchange & Damage Tracker', wa:'WhatsApp Issue Log', dispatch:'New Item Dispatch Log', change:'Order Change & Hold Log', rtowr:'RTO Wrong Received Log', refund:'Refund Log' };
+  const newBtnLabels = { ndr:'+ New NDR Entry', rto:'+ New RTO Entry', returns:'+ New Case', wa:'+ Log New Issue', dispatch:'+ Log New Dispatch', change:'+ Log Change Request', rtowr:'+ Log Wrong Received', refund:'+ Log Refund Request' };
   document.getElementById('pageTitle').textContent = titles[module] || titles.ndr;
   document.getElementById('newBtn').textContent = newBtnLabels[module] || newBtnLabels.ndr;
   if(module==='rto') renderAllRto();
@@ -3226,6 +3647,7 @@ function switchModule(module){
   else if(module==='dispatch') renderAllDispatch();
   else if(module==='change') renderAllChange();
   else if(module==='rtowr') renderAllRtowr();
+  else if(module==='refund') renderAllRefund();
   else renderAll();
 }
 
@@ -4968,6 +5390,347 @@ function onRtowrSyncFailure(err){
   scheduleRtowrSyncSoon(15000);
 }
 
+/* ---------------- Refund Log drawer + screenshot + sync ---------------- */
+function renderRefundScreenshotPreview(o){
+  const s = o.screenshot;
+  if(s && s.fileId){
+    return `<div class="screenshot-preview"><img src="https://drive.google.com/thumbnail?id=${escapeHtml(s.fileId)}&sz=w400"><button type="button" class="btn btn-ghost remove-link" onclick="removeRefundScreenshot('${escapeHtml(o.id)}')">✕ Remove screenshot</button></div>`;
+  }
+  return `<div class="screenshot-preview"><div class="empty">No screenshot uploaded yet.</div></div>`;
+}
+function handleRefundScreenshotUpload(orderId){
+  const fileInput = document.getElementById('d_screenshotFile');
+  const statusEl = document.getElementById('d_screenshotStatus');
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  if(!file){ return; }
+  if(!file.type.startsWith('image/')){ showToast('Please choose an image file.', 'error'); fileInput.value=''; return; }
+  if(file.size > 8*1024*1024){ showToast('That screenshot is too large (max 8MB) — try a smaller one.', 'error'); fileInput.value=''; return; }
+  if(statusEl) statusEl.textContent = 'Compressing…';
+  compressImageFile_(file, 1200, 0.72).then(({dataBase64, mimeType})=>{
+    if(statusEl) statusEl.textContent = 'Uploading…';
+    return apiPost('uploadRefundScreenshot', { orderId: orderId, fileName: file.name, mimeType: mimeType, dataBase64: dataBase64 });
+  }).then(res=>{
+    if(statusEl) statusEl.textContent = '';
+    if(!checkAuthResult(res)) return;
+    if(!res || res.ok === false){
+      showToast('Upload failed: ' + (res && res.error ? res.error : 'unknown error'), 'error');
+      return;
+    }
+    applyRefundScreenshotUpdate_(orderId, res.refund.screenshot);
+    if(fileInput) fileInput.value = '';
+    showToast('Screenshot added.', 'success');
+  }).catch(err=>{
+    if(statusEl) statusEl.textContent = '';
+    console.error('Refund screenshot upload failed:', err);
+    showToast((err && err.message) || "Couldn't upload — check your connection and try again.", 'error');
+  });
+}
+function removeRefundScreenshot(orderId){
+  if(!confirm('Remove this screenshot?')) return;
+  apiPost('deleteRefundScreenshot', { orderId: orderId }).then(res=>{
+    if(!checkAuthResult(res)) return;
+    if(!res || res.ok === false){
+      showToast('Could not remove screenshot: ' + (res && res.error ? res.error : 'unknown error'), 'error');
+      return;
+    }
+    applyRefundScreenshotUpdate_(orderId, null);
+    showToast('Screenshot removed.', 'success');
+  }).catch(err=>{
+    console.error('Refund screenshot delete failed:', err);
+    showToast("Couldn't remove screenshot — check your connection and try again.", 'error');
+  });
+}
+function applyRefundScreenshotUpdate_(orderId, screenshot){
+  const o = refundRequests.find(x=>x.id===orderId);
+  if(!o) return;
+  o.screenshot = screenshot || null;
+  if(refundPendingChanges[orderId]) refundPendingChanges[orderId].payload.screenshot = o.screenshot;
+  saveRefundRequestsCache();
+  saveRefundPendingChanges();
+  if(activeDrawerOrder===orderId && activeDrawerModule==='refund'){
+    const wrap = document.getElementById('screenshotPreviewWrap');
+    if(wrap) wrap.innerHTML = renderRefundScreenshotPreview(o);
+  }
+  renderRefundTable();
+}
+function openRefundDrawerById(id){
+  const o = refundRequests.find(x=>x.id===id);
+  if(o) openRefundDrawer(o);
+}
+function openRefundDrawer(order){
+  activeDrawerOrder = order.id;
+  activeDrawerModule = 'refund';
+  const o = order;
+  const isNewEntry = order.id === '__new__';
+  const loggedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.loggedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const processedByOptions = AGENTS.map(a=>`<option value="${escapeHtml(a)}" ${o.processedBy===a?'selected':''}>${escapeHtml(a)}</option>`).join('');
+  const auditLine = (o.updatedBy || o.createdBy) ?
+    `<div style="margin-top:4px;">${o.createdBy?`Created by ${escapeHtml(o.createdBy)}${o.createdAt?' on '+new Date(o.createdAt).toLocaleString():''}<br>`:''}${o.updatedBy?`Last updated by ${escapeHtml(o.updatedBy)}${o.updatedAt?' on '+new Date(o.updatedAt).toLocaleString():''}`:''}</div>` : '';
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawerTitle">${escapeHtml(o.id)}</h2>
+        <div class="awb mono" id="drawerSubtitle">${escapeHtml(o.phone) || '—'}</div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-error" id="drawerError" style="display:none;"></div>
+
+      <div class="role-section exec">
+        <div class="role-header exec-h"><span class="role-badge">1</span>NDR Team — refund requested</div>
+        <div class="field-group">
+          <label>Logged at</label>
+          <input type="datetime-local" id="d_loggedAt" value="${o.loggedAt||''}">
+        </div>
+        <div class="field-group">
+          <label>Phone</label>
+          <input id="d_phone" placeholder="e.g. 9198XXXXXXX" value="${escapeHtml(o.phone)}">
+        </div>
+        <div class="field-group">
+          <label>Refund amount (₹)</label>
+          <input type="number" id="d_amount" min="0" step="1" value="${o.amount||0}">
+        </div>
+        <div class="field-group">
+          <label>Reason</label>
+          <select id="d_reason">
+            <option value="DAMAGED" ${o.reason==='DAMAGED'?'selected':''}>Damaged Product</option>
+            <option value="WRONG_ITEM" ${o.reason==='WRONG_ITEM'?'selected':''}>Wrong Item Sent</option>
+            <option value="NOT_DELIVERED" ${o.reason==='NOT_DELIVERED'?'selected':''}>Not Delivered</option>
+            <option value="QUALITY_ISSUE" ${o.reason==='QUALITY_ISSUE'?'selected':''}>Quality Issue</option>
+            <option value="ORDER_CANCELLED" ${o.reason==='ORDER_CANCELLED'?'selected':''}>Order Cancelled</option>
+            <option value="OTHER" ${o.reason==='OTHER'?'selected':''}>Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Details</label>
+          <textarea id="d_details">${escapeHtml(o.details)}</textarea>
+        </div>
+        <div class="field-group">
+          <label>Logged by</label>
+          <select id="d_loggedBy">
+            <option value="Unassigned" ${!o.loggedBy?'selected':''}>Unassigned</option>
+            ${loggedByOptions}
+          </select>
+        </div>
+      </div>
+
+      <div class="role-section ndr">
+        <div class="role-header ndr-h"><span class="role-badge">2</span>Accounts Team — process &amp; resolve</div>
+        <div class="field-group">
+          <label>Refund method</label>
+          <select id="d_refundMethod">
+            <option value="UPI" ${o.refundMethod==='UPI'?'selected':''}>UPI</option>
+            <option value="BANK_TRANSFER" ${o.refundMethod==='BANK_TRANSFER'?'selected':''}>Bank Transfer</option>
+            <option value="STORE_CREDIT" ${o.refundMethod==='STORE_CREDIT'?'selected':''}>Store Credit</option>
+            <option value="ORIGINAL_PAYMENT" ${o.refundMethod==='ORIGINAL_PAYMENT'?'selected':''}>Original Payment Mode</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Screenshot / proof of refund</label>
+          ${isNewEntry ? `
+            <div class="photo-empty">Save this request first, then come back to add a screenshot.</div>
+          ` : `
+            <input type="file" id="d_screenshotFile" accept="image/*" onchange="handleRefundScreenshotUpload('${escapeHtml(o.id)}')">
+            <span id="d_screenshotStatus" style="font-size:11px;color:var(--slate-soft);"></span>
+            <div id="screenshotPreviewWrap">${renderRefundScreenshotPreview(o)}</div>
+          `}
+        </div>
+        <div class="field-group">
+          <label>Processed by</label>
+          <select id="d_processedBy">
+            <option value="" ${!o.processedBy?'selected':''}>— Not yet processed —</option>
+            ${processedByOptions}
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Processed at</label>
+          <input type="datetime-local" id="d_processedAt" value="${o.processedAt||''}">
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="d_status">
+            <option value="NEW" ${o.status==='NEW'?'selected':''}>🔁 Pending</option>
+            <option value="PROCESSED" ${o.status==='PROCESSED'?'selected':''}>✅ Refunded</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn btn-primary" onclick="saveRefundDrawer()">Save changes</button>
+        <button class="btn" onclick="quickWhatsAppRefund('${escapeHtml(o.id)}')">💬 Message customer</button>
+        <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      </div>
+      <div class="drawer-note">Changes save to this device instantly and sync to the Refund Log sheet in the background — safe to keep editing while offline or on a weak connection.${auditLine}</div>
+    </div>
+  `;
+  document.getElementById('drawer').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  // No applyDrawerLockIfNeeded() call here on purpose — same reasoning as
+  // WA Log / Change-Hold / RTO Wrong Received: the NDR team logs the
+  // refund, the Accounts team is meant to process a different person's
+  // entry, so locking it to the creator would break the whole handoff.
+  if(isNewEntry){
+    const loggedAtField = document.getElementById('d_loggedAt');
+    loggedAtField.closest('.field-group').insertAdjacentHTML('beforebegin', '<div class="field-group"><label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-soft);font-weight:700;margin:0 0 6px;">Order ID</label><input id="d_id" placeholder="OZ00000" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;"></div>');
+    const d_idField = document.getElementById('d_id');
+    if(d_idField) d_idField.focus();
+  }
+}
+function saveRefundDrawer(){
+  if(refundSaveInFlight) return; // swallow a duplicate/ghost click instead of creating a second row
+  refundSaveInFlight = true;
+  try {
+    const o = refundRequests.find(x=>x.id===activeDrawerOrder);
+    if(!o){
+      showDrawerError("Couldn't find this entry to save (it may have been refreshed mid-edit) — close this panel and try again.");
+      return;
+    }
+    const isNewEntry = activeDrawerOrder === '__new__';
+
+    if(isNewEntry){
+      const idVal = document.getElementById('d_id').value.trim();
+      if(!idVal){ showDrawerError('Please enter an Order ID before saving.'); return; }
+      if(refundRequests.some(x=>x.id===idVal && x !== o)){ showDrawerError('Order ID '+idVal+' already has a refund logged. Open the existing entry instead of creating a new one.'); return; }
+      o.id = idVal;
+    }
+
+    o.loggedAt = document.getElementById('d_loggedAt').value;
+    o.phone = document.getElementById('d_phone').value;
+    o.amount = parseFloat(document.getElementById('d_amount').value) || 0;
+    o.reason = document.getElementById('d_reason').value;
+    o.details = document.getElementById('d_details').value;
+    o.loggedBy = document.getElementById('d_loggedBy').value;
+    o.refundMethod = document.getElementById('d_refundMethod').value;
+    o.processedBy = document.getElementById('d_processedBy').value;
+    o.status = document.getElementById('d_status').value;
+    let processedAt = document.getElementById('d_processedAt').value;
+    if(o.status === 'PROCESSED' && !processedAt){
+      processedAt = TODAY.toISOString().slice(0,16);
+    }
+    o.processedAt = processedAt;
+
+    queueRefundChange(o, isNewEntry);
+    saveRefundRequestsCache();
+    closeDrawer();
+    renderAllRefund();
+    showToast(isNewEntry ? 'Refund logged — syncing…' : 'Changes saved — syncing…', 'success');
+  } catch(err){
+    console.error('saveRefundDrawer failed:', err);
+    showDrawerError("Couldn't save: " + (err && err.message ? err.message : String(err)) + ". Try again — if this keeps happening, tell your admin.");
+  } finally {
+    refundSaveInFlight = false;
+  }
+}
+function openNewRefundEntry(){
+  const nowStr = TODAY.toISOString().slice(0,16);
+  const defaultLoggedBy = AGENTS.includes(currentUser.displayName) ? currentUser.displayName : (AGENTS[0] || 'Unassigned');
+  const blank = {id:'__new__', loggedAt:nowStr, phone:'', amount:0, reason:'DAMAGED', details:'', loggedBy:defaultLoggedBy, refundMethod:'UPI', screenshot:null, processedBy:'', processedAt:'', status:'NEW'};
+  activeDrawerOrder = '__new__';
+  activeDrawerModule = 'refund';
+  refundRequests.push(blank);
+  openRefundDrawer(blank);
+  document.getElementById('drawerTitle').textContent = 'New refund request';
+  document.getElementById('drawerSubtitle').textContent = 'Fill in Order ID below';
+}
+function quickWhatsAppRefund(id){
+  const o = refundRequests.find(x=>x.id===id);
+  if(!o) return;
+  const lines = o.status==='PROCESSED'
+    ? `Hi, this is regarding your *PINKJELLY* order ${o.id}. Your refund of ${fmtINR(o.amount)} via ${refundMethodLabel(o.refundMethod)} has been processed. Please check and confirm receipt — thank you for your patience!`
+    : `Hi, this is regarding your *PINKJELLY* order ${o.id}. We've logged your refund request of ${fmtINR(o.amount)} (${refundReasonLabel(o.reason)}) and it's being processed. We'll update you as soon as it's done.`;
+  const msg = encodeURIComponent(lines);
+  if(o.phone){
+    window.open(`https://wa.me/${o.phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+  } else {
+    showToast('No phone number on file for '+o.id+' yet — open the entry and add one to enable one-click WhatsApp.', 'error');
+  }
+}
+function exportRefundCSV(){
+  const data = applyRefundFilters();
+  const headers = ['Logged At','Order ID','Phone','Amount','Reason','Details','Logged By','Refund Method','Processed By','Processed At','Status','Has Screenshot'];
+  const rows = data.map(o=>[o.loggedAt,o.id,o.phone,o.amount,refundReasonLabel(o.reason),o.details,o.loggedBy,refundMethodLabel(o.refundMethod),o.processedBy,o.processedAt,o.status, (o.screenshot && o.screenshot.fileId) ? 'Yes':'No']);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${(v===undefined||v===null?'':v).toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'refund-log-export.csv';
+  a.click();
+}
+function queueRefundChange(order, isNew){
+  const wasNew = refundPendingChanges[order.id] && refundPendingChanges[order.id].isNew;
+  refundPendingChanges[order.id] = {
+    changeId: uuidShort(),
+    orderId: order.id,
+    action: 'upsert',
+    isNew: !!isNew || !!wasNew,
+    payload: JSON.parse(JSON.stringify(order)),
+    queuedAt: new Date().toISOString()
+  };
+  saveRefundPendingChanges();
+  updateSyncBadge();
+  scheduleRefundSyncSoon(400);
+}
+function scheduleRefundSyncSoon(delay){
+  clearTimeout(refundSyncTimer);
+  refundSyncTimer = setTimeout(attemptSyncRefund, delay || 1500);
+}
+function attemptSyncRefund(){
+  const ids = Object.keys(refundPendingChanges);
+  if(!ids.length || refundSyncInFlight || !authToken) return;
+  refundSyncInFlight = true;
+  const batch = ids.map(id => refundPendingChanges[id]);
+  updateSyncBadge('syncing');
+  apiPost('syncRefund', { changes: batch.map(b=>({changeId:b.changeId, orderId:b.orderId, action:b.action, isNew:b.isNew, payload:b.payload})) })
+    .then(res => {
+      refundSyncInFlight=false;
+      if(!checkAuthResult(res)) return;
+      if(res && res.ok === false){
+        registerSyncFailure(res.error || 'The server returned an error.');
+        scheduleRefundSyncSoon(15000);
+        return;
+      }
+      onRefundSyncSuccess(res, batch);
+    })
+    .catch(err => { refundSyncInFlight=false; onRefundSyncFailure(err); });
+}
+function onRefundSyncSuccess(res, sentBatch){
+  if(!res){ registerSyncFailure('No response from the server.'); scheduleRefundSyncSoon(15000); return; }
+  consecutiveSyncFailures = 0;
+  hideSyncProblemBanner();
+  (res.applied||[]).forEach(orderId=>{
+    const cur = refundPendingChanges[orderId];
+    const sent = sentBatch.find(b=>b.orderId===orderId);
+    if(cur && sent && cur.changeId===sent.changeId) delete refundPendingChanges[orderId];
+  });
+  (res.rejected||[]).forEach(r=>{
+    if(refundPendingChanges[r.orderId]) delete refundPendingChanges[r.orderId];
+    if(r.duplicate){
+      refundRequests = refundRequests.filter(o=>o.id!==r.orderId);
+    }
+    console.warn('Refund Log sync rejected for', r.orderId, '-', r.reason);
+  });
+  (res.orders||[]).forEach(o=>{
+    const idx = refundRequests.findIndex(x=>x.id===o.id);
+    if(idx>-1) refundRequests[idx] = Object.assign({}, refundRequests[idx], o);
+    else refundRequests.push(o);
+  });
+  saveRefundPendingChanges();
+  saveRefundRequestsCache();
+  lastSyncTime = new Date();
+  renderAllRefund();
+  if(res.rejected && res.rejected.length){
+    showToast('Could not save: ' + res.rejected.map(r=>r.reason).join(' '), 'error');
+  }
+  if(Object.keys(refundPendingChanges).length) scheduleRefundSyncSoon(4000);
+}
+function onRefundSyncFailure(err){
+  console.warn('Refund Log sync failed, will retry:', err);
+  registerSyncFailure(navigator.onLine === false ? "You're offline right now." : "Couldn't reach the server (connection problem).");
+  updateSyncBadge();
+  scheduleRefundSyncSoon(15000);
+}
+
 function renderCurrentUser(){
   const el = document.getElementById('userChip');
   if(!currentUser.username){ el.innerHTML=''; return; }
@@ -4976,7 +5739,7 @@ function renderCurrentUser(){
 }
 function updateSyncBadge(state){
   const el = document.getElementById('offlineBadge');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length + Object.keys(refundPendingChanges).length;
   if(state==='syncing'){
     el.className = 'offline-badge syncing';
     el.innerHTML = '<span class="pip"></span>Syncing…';
@@ -5120,6 +5883,18 @@ function onBootstrapSuccess(res){
   }
   rtoWrongReceived = mergedRtowr;
 
+  // Same merge + in-progress-draft protection for the Refund Log module.
+  const serverRefund = res.refundRequests || [];
+  const mergedRefund = serverRefund.map(so => refundPendingChanges[so.id] ? Object.assign({}, so, refundPendingChanges[so.id].payload) : so);
+  Object.keys(refundPendingChanges).forEach(id=>{
+    if(!mergedRefund.find(o=>o.id===id)) mergedRefund.push(refundPendingChanges[id].payload);
+  });
+  const inProgressRefundDraft = refundRequests.find(o=>o.id==='__new__');
+  if(inProgressRefundDraft && !mergedRefund.find(o=>o.id==='__new__')){
+    mergedRefund.push(inProgressRefundDraft);
+  }
+  refundRequests = mergedRefund;
+
   if(res.agents && res.agents.length){ AGENTS = res.agents.map(a=>a.name); computeWaTeams_(res.agents); saveAgentsCache(res.agents); }
   if(res.settings && res.settings.SLA_DAYS){
     slaAutoRtoDays = parseInt(res.settings.SLA_DAYS,10) || 5;
@@ -5166,6 +5941,16 @@ function onBootstrapSuccess(res){
     const rtowrSlaInput = document.getElementById('rtowrSlaDays');
     if(rtowrSlaInput) rtowrSlaInput.value = reviewSlaDays;
   }
+  if(res.settings && res.settings.REFUND_SLA_HOURS){
+    refundSlaHours = parseInt(res.settings.REFUND_SLA_HOURS,10) || 24;
+    const refundSlaInput = document.getElementById('refundSlaHours');
+    if(refundSlaInput) refundSlaInput.value = refundSlaHours;
+  }
+  if(res.settings && res.settings.HIGH_VALUE_THRESHOLD){
+    highValueThreshold = parseFloat(res.settings.HIGH_VALUE_THRESHOLD) || 1500;
+    const highValueInput = document.getElementById('refundHighValue');
+    if(highValueInput) highValueInput.value = highValueThreshold;
+  }
   saveSettingsCache();
   lastSyncTime = new Date();
   saveOrdersCache();
@@ -5175,6 +5960,7 @@ function onBootstrapSuccess(res){
   saveDispatchEntriesCache();
   saveChangeRequestsCache();
   saveRtowrEntriesCache();
+  saveRefundRequestsCache();
   renderAll();
   renderAllRto();
   renderAllRed();
@@ -5182,6 +5968,7 @@ function onBootstrapSuccess(res){
   renderAllDispatch();
   renderAllChange();
   renderAllRtowr();
+  renderAllRefund();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
@@ -5189,6 +5976,7 @@ function onBootstrapSuccess(res){
   if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch();
   if(Object.keys(changePendingChanges).length) attemptSyncChange();
   if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr();
+  if(Object.keys(refundPendingChanges).length) attemptSyncRefund();
 }
 
 function queueChange(order, isNew){
@@ -5293,7 +6081,7 @@ function onSyncFailure(err){
 }
 function showSyncProblemBanner(message){
   const el = document.getElementById('syncProblemBanner');
-  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length;
+  const pendingCount = Object.keys(pendingChanges).length + Object.keys(rtoPendingChanges).length + Object.keys(redPendingChanges).length + Object.keys(waPendingChanges).length + Object.keys(dispatchPendingChanges).length + Object.keys(changePendingChanges).length + Object.keys(rtowrPendingChanges).length + Object.keys(refundPendingChanges).length;
   document.getElementById('syncProblemMsg').textContent =
     `${pendingCount} change${pendingCount===1?'':'s'} couldn't be saved yet (${message}) — nothing is lost, it'll keep retrying automatically.`;
   el.style.display = 'flex';
@@ -5361,6 +6149,18 @@ function pushReviewSlaSetting(){
     .then(res=>{ checkAuthResult(res); })
     .catch(()=>{ /* stays local until back online */ });
 }
+function pushRefundSlaSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'REFUND_SLA_HOURS', value: refundSlaHours })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
+function pushHighValueThresholdSetting(){
+  if(!authToken) return;
+  apiPost('setSetting', { key:'HIGH_VALUE_THRESHOLD', value: highValueThreshold })
+    .then(res=>{ checkAuthResult(res); })
+    .catch(()=>{ /* stays local until back online */ });
+}
 
 /* ---------------- manage users (admin only) ---------------- */
 function openManageUsers(){
@@ -5384,7 +6184,8 @@ const JOURNEY_META = {
   wa:       { label: 'WhatsApp Issue Log',         icon: '💬', openFnName: 'openWaDrawerById' },
   dispatch: { label: 'New Item Dispatch',          icon: '🚚', openFnName: 'openDispatchDrawerById' },
   change:   { label: 'Order Change & Hold',        icon: '📝', openFnName: 'openChangeDrawerById' },
-  rtowr:    { label: 'RTO Wrong Received',         icon: '🔁', openFnName: 'openRtowrDrawerById' }
+  rtowr:    { label: 'RTO Wrong Received',         icon: '🔁', openFnName: 'openRtowrDrawerById' },
+  refund:   { label: 'Refund Log',                 icon: '💸', openFnName: 'openRefundDrawerById' }
 };
 function journeyDetail(moduleKey, o){
   switch(moduleKey){
@@ -5423,6 +6224,11 @@ function journeyDetail(moduleKey, o){
       const st = map[o.status] || {l:o.status||'—',c:'pending'};
       return { summary: `${rtowrTeamLabel(o.team)}${o.remark?' — '+o.remark:''}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDate(o.date), sortTime: (parseD(o.date)||new Date(0)).getTime() };
     }
+    case 'refund': {
+      const map = {NEW:{l:'🔁 Pending',c:'pending'}, PROCESSED:{l:'✓ Refunded',c:'delivered'}};
+      const st = map[o.status] || {l:o.status||'—',c:'pending'};
+      return { summary: `${fmtINR(o.amount)} — ${refundReasonLabel(o.reason)}`, statusLabel: st.l, statusCls: st.c, dateLabel: fmtDateTime(o.loggedAt), sortTime: (parseISO_(o.loggedAt)||new Date(0)).getTime() };
+    }
   }
 }
 function buildOrderJourney(query){
@@ -5440,6 +6246,7 @@ function buildOrderJourney(query){
   dispatchEntries.forEach(o=>{ if(o.id!=='__new__' && (o.orderId||'').toLowerCase()===q) add('dispatch', o); });
   changeRequests.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('change', o); });
   rtoWrongReceived.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('rtowr', o); });
+  refundRequests.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('refund', o); });
   results.sort((a,b)=> a.detail.sortTime - b.detail.sortTime);
   return results;
 }
@@ -5677,6 +6484,7 @@ function closeDrawer(){
     else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
     else if(activeDrawerModule==='rtowr') rtoWrongReceived = rtoWrongReceived.filter(o=>o.id!=='__new__');
+    else if(activeDrawerModule==='refund') refundRequests = refundRequests.filter(o=>o.id!=='__new__');
     else orders = orders.filter(o=>o.id!=='__new__');
   }
   document.getElementById('drawer').classList.remove('show');
@@ -5878,6 +6686,7 @@ function bindEvents(){
     else if(currentModule==='dispatch') exportDispatchCSV();
     else if(currentModule==='change') exportChangeCSV();
     else if(currentModule==='rtowr') exportRtowrCSV();
+    else if(currentModule==='refund') exportRefundCSV();
     else exportCSV();
   });
   document.getElementById('newBtn').addEventListener('click', ()=>{
@@ -5887,6 +6696,7 @@ function bindEvents(){
     else if(currentModule==='dispatch') openNewDispatchEntry();
     else if(currentModule==='change') openNewChangeEntry();
     else if(currentModule==='rtowr') openNewRtowrEntry();
+    else if(currentModule==='refund') openNewRefundEntry();
     else openNewEntry();
   });
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
@@ -6056,6 +6866,41 @@ function bindEvents(){
     pushReviewSlaSetting();
   });
 
+  // ---- Refund Log toolbar ----
+  document.getElementById('refundSearchInput').addEventListener('input', e=>{ refundFilters.search = e.target.value; renderRefundTable(); });
+  document.getElementById('refundStatusChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#refundStatusChips .chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    refundFilters.status = chip.dataset.status;
+    renderRefundTable();
+  });
+  document.getElementById('refundPrioChips').addEventListener('click', e=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    const isActive = chip.classList.toggle('active');
+    refundFilters.priority = isActive ? 'HIGH' : 'ALL';
+    renderRefundTable();
+  });
+  document.getElementById('refundReasonFilter').addEventListener('change', e=>{ refundFilters.reason = e.target.value; renderRefundTable(); });
+  document.getElementById('refundAgentFilter').addEventListener('change', e=>{ refundFilters.agent = e.target.value; renderRefundTable(); });
+  document.getElementById('refundMonthFilter').addEventListener('change', e=>{ refundFilters.month = e.target.value; renderRefundTable(); });
+  document.getElementById('refundSlaHours').addEventListener('input', e=>{
+    const v = parseInt(e.target.value, 10);
+    refundSlaHours = (v && v > 0) ? v : 24;
+    saveSettingsCache();
+    renderRefundAlerts();
+    pushRefundSlaSetting();
+  });
+  document.getElementById('refundHighValue').addEventListener('input', e=>{
+    const v = parseFloat(e.target.value.replace(/[^0-9.]/g,''));
+    highValueThreshold = (v && v > 0) ? v : 1500;
+    saveSettingsCache();
+    renderRefundAlerts();
+    renderRefundReasonChart();
+    renderRefundTable();
+    pushHighValueThresholdSetting();
+  });
+
   document.getElementById('manageUsersBtn').addEventListener('click', openManageUsers);
   document.getElementById('usersOverlay').addEventListener('click', closeManageUsers);
   document.getElementById('globalSearchBtn').addEventListener('click', ()=> openJourneyModal(document.getElementById('globalSearchInput').value));
@@ -6069,13 +6914,14 @@ function bindEvents(){
       else if(activeDrawerModule==='dispatch') dispatchEntries = dispatchEntries.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='change') changeRequests = changeRequests.filter(o=>o.id!=='__new__');
       else if(activeDrawerModule==='rtowr') rtoWrongReceived = rtoWrongReceived.filter(o=>o.id!=='__new__');
+      else if(activeDrawerModule==='refund') refundRequests = refundRequests.filter(o=>o.id!=='__new__');
       else orders = orders.filter(o=>o.id!=='__new__');
     }
     closeDrawer();
   });
   document.getElementById('loginForm').addEventListener('submit', doLogin);
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
-  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); attemptSyncRtowr(); bootstrapFromServer(); });
+  window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); attemptSyncRtowr(); attemptSyncRefund(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
   setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
@@ -6084,6 +6930,7 @@ function bindEvents(){
   setInterval(()=>{ if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch(); }, 5000);
   setInterval(()=>{ if(Object.keys(changePendingChanges).length) attemptSyncChange(); }, 5000);
   setInterval(()=>{ if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr(); }, 5000);
+  setInterval(()=>{ if(Object.keys(refundPendingChanges).length) attemptSyncRefund(); }, 5000);
   setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
 }
 
@@ -6098,6 +6945,8 @@ function startApp(){
   document.getElementById('changeDispatchPhone').value = dispatchNotifyPhone;
   document.getElementById('changeDispatchGroupLink').value = dispatchGroupLink;
   document.getElementById('rtowrSlaDays').value = reviewSlaDays;
+  document.getElementById('refundSlaHours').value = refundSlaHours;
+  document.getElementById('refundHighValue').value = highValueThreshold;
   renderAll();            // instant paint from cache — works even fully offline
   renderAllRto();
   renderAllRed();
@@ -6105,6 +6954,7 @@ function startApp(){
   renderAllDispatch();
   renderAllChange();
   renderAllRtowr();
+  renderAllRefund();
   bootstrapFromServer();  // reconcile with the Sheet as soon as we can reach it
 }
 
