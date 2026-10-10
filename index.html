@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-09-29.1">
+<meta name="app-version" content="2026-10-10.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -4664,7 +4664,7 @@ function checkDispatchOrderIdDupe(){
   if(!hint || !field) return;
   const val = field.value.trim().toLowerCase();
   if(!val){ hint.style.display = 'none'; return; }
-  const others = dispatchEntries.filter(x=>x.id!==activeDrawerOrder && x.id!=='__new__' && (x.orderId||'').trim().toLowerCase()===val);
+  const others = dispatchEntries.filter(x=>x.id!==activeDrawerOrder && x.id!=='__new__' && String(x.orderId==null?'':x.orderId).trim().toLowerCase()===val);
   if(others.length){
     hint.style.display = 'block';
     hint.innerHTML = `⚠ ${others.length} existing entr${others.length>1?'ies':'y'} already logged for this Order ID — ` +
@@ -4702,11 +4702,11 @@ function saveDispatchDrawer(){
       // means the same entry got saved twice, not a second package.
       const exactDupe = dispatchEntries.find(x =>
         x.id !== '__new__' &&
-        (x.orderId||'').trim().toLowerCase() === orderIdVal.toLowerCase() &&
+        String(x.orderId==null?'':x.orderId).trim().toLowerCase() === orderIdVal.toLowerCase() &&
         (x.date||'') === dateVal &&
         (x.reason||'') === reasonVal &&
-        (x.sku||'').trim().toLowerCase() === skuVal.trim().toLowerCase() &&
-        (x.trackingNumber||'').trim().toLowerCase() === trackingNumberVal.trim().toLowerCase()
+        String(x.sku==null?'':x.sku).trim().toLowerCase() === skuVal.trim().toLowerCase() &&
+        String(x.trackingNumber==null?'':x.trackingNumber).trim().toLowerCase() === trackingNumberVal.trim().toLowerCase()
       );
       if(exactDupe){
         showDrawerError(`This looks identical to an entry already logged for ${orderIdVal} on ${fmtDate(exactDupe.date)} (${typeLabel(exactDupe.reason)}) — if this is really a separate package, change something like the tracking number before saving. Otherwise close this and open the existing entry instead.`);
@@ -6236,17 +6236,17 @@ function buildOrderJourney(query){
   if(!q) return [];
   const results = [];
   const add = (moduleKey, o) => results.push({ moduleKey, meta: JOURNEY_META[moduleKey], openId: o.id, detail: journeyDetail(moduleKey, o) });
-  orders.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('ndr', o); });
-  rtoOrders.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('rto', o); });
-  redCases.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('red', o); });
-  waIssues.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('wa', o); });
+  orders.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('ndr', o); });
+  rtoOrders.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('rto', o); });
+  redCases.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('red', o); });
+  waIssues.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('wa', o); });
   // Dispatch Log's Order ID can repeat and lives in o.orderId (o.id is a
   // separately generated unique row key) — match on orderId but still open
   // by o.id, same as the Dispatch Log module itself does.
-  dispatchEntries.forEach(o=>{ if(o.id!=='__new__' && (o.orderId||'').toLowerCase()===q) add('dispatch', o); });
-  changeRequests.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('change', o); });
-  rtoWrongReceived.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('rtowr', o); });
-  refundRequests.forEach(o=>{ if(o.id!=='__new__' && (o.id||'').toLowerCase()===q) add('refund', o); });
+  dispatchEntries.forEach(o=>{ if(o.id!=='__new__' && String(o.orderId==null?'':o.orderId).trim().toLowerCase()===q) add('dispatch', o); });
+  changeRequests.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('change', o); });
+  rtoWrongReceived.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('rtowr', o); });
+  refundRequests.forEach(o=>{ if(o.id!=='__new__' && String(o.id==null?'':o.id).trim().toLowerCase()===q) add('refund', o); });
   results.sort((a,b)=> a.detail.sortTime - b.detail.sortTime);
   return results;
 }
