@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-10-10.1">
+<meta name="app-version" content="2026-10-23.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -1238,6 +1238,10 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 let orders = [];
 let AGENTS = [];
+// Inactive (removed) users must not show up in filters/leaderboards. AGENTS only
+// ever holds active users, so anyone not in it is treated as inactive — except
+// before the list has loaded, when we don't hide anyone.
+function isActiveAgent_(name){ return !name || name==='Unassigned' || !AGENTS.length || AGENTS.includes(name); }
 // WA Log's "Logged by" (exec) and "Remarked by" (NDR) dropdowns pull from
 // these instead of the full AGENTS list, so the two teams stay distinct —
 // derived from each agent's WaTeam field, set by an admin in Manage Users.
@@ -1644,7 +1648,7 @@ function computeAgentLeaderboard(data){
     if(o.status==='RTO') map[a].rto++;
     if(o.status==='PENDING') map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     if(a.agent==='Unassigned') return 1;
     if(b.agent==='Unassigned') return -1;
     const rateA = a.assigned ? a.delivered/a.assigned : 0;
@@ -1832,7 +1836,7 @@ function renderReasonFilterOptions(){
   sel.value = filters.reason;
 
   const agentSel = document.getElementById('agentFilter');
-  const agentsInData = [...new Set(orders.map(o=>o.agent||'Unassigned'))].sort();
+  const agentsInData = [...new Set(orders.map(o=>o.agent||'Unassigned'))].filter(a=>a==='Unassigned'||isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All agents</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = filters.agent;
 
@@ -2033,7 +2037,7 @@ function computeRtoAgentLeaderboard(data){
     if(o.status==='REFUNDED') map[a].refunded++;
     if(o.status==='PENDING') map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     if(a.agent==='Unassigned') return 1;
     if(b.agent==='Unassigned') return -1;
     const rateA = (a.reshipped+a.refunded) ? a.reshipped/(a.reshipped+a.refunded) : 0;
@@ -2085,7 +2089,7 @@ function renderRtoReasonFilterOptions(){
   sel.value = rtoFilters.reason;
 
   const agentSel = document.getElementById('rtoAgentFilter');
-  const agentsInData = [...new Set(rtoOrders.map(o=>o.agent||'Unassigned'))].sort();
+  const agentsInData = [...new Set(rtoOrders.map(o=>o.agent||'Unassigned'))].filter(a=>a==='Unassigned'||isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All owners</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = rtoFilters.agent;
 
@@ -2294,7 +2298,7 @@ function computeRedAgentLeaderboard(data){
     if(o.status==='RESOLVED') map[a].resolved++;
     if(o.status==='PENDING') map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     if(a.agent==='Unassigned') return 1;
     if(b.agent==='Unassigned') return -1;
     const rateA = a.assigned ? a.resolved/a.assigned : 0;
@@ -2345,7 +2349,7 @@ function renderRedReasonFilterOptions(){
   sel.value = redFilters.reason;
 
   const agentSel = document.getElementById('redAgentFilter');
-  const agentsInData = [...new Set(redCases.map(o=>o.agent||'Unassigned'))].sort();
+  const agentsInData = [...new Set(redCases.map(o=>o.agent||'Unassigned'))].filter(a=>a==='Unassigned'||isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = redFilters.agent;
 
@@ -2543,7 +2547,7 @@ function renderWaExecLeaderboard(){
     if(!map[a]) map[a] = {agent:a, assigned:0};
     map[a].assigned++;
   });
-  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+  const rows = Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>b.assigned-a.assigned).map(a=>`
     <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
       <div class="lb-name">${escapeHtml(a.agent)}</div>
       <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*12)}%"></div></div>
@@ -2564,7 +2568,7 @@ function computeWaAgentLeaderboard(data){
     if(o.status==='RESOLVED') map[a].resolved++;
     else map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     const rateA = a.assigned ? a.resolved/a.assigned : 0;
     const rateB = b.assigned ? b.resolved/b.assigned : 0;
     return rateB - rateA;
@@ -2613,7 +2617,7 @@ function renderWaReasonFilterOptions(){
   sel.value = waFilters.reason;
 
   const agentSel = document.getElementById('waAgentFilter');
-  const agentsInData = [...new Set([...WA_NDR_AGENTS, ...waIssues.map(o=>o.remarkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  const agentsInData = [...new Set([...WA_NDR_AGENTS, ...waIssues.map(o=>o.remarkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned' && isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All NDR handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = waFilters.agent;
 
@@ -3006,7 +3010,7 @@ function renderChangeExecLeaderboard(){
     if(!map[a]) map[a] = {agent:a, assigned:0};
     map[a].assigned++;
   });
-  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+  const rows = Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>b.assigned-a.assigned).map(a=>`
     <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
       <div class="lb-name">${escapeHtml(a.agent)}</div>
       <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*15)}%"></div></div>
@@ -3026,7 +3030,7 @@ function computeChangeAgentLeaderboard(data){
     map[a].assigned++;
     if(o.status==='RESOLVED') map[a].done++; else map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     const rateA = a.assigned ? a.done/a.assigned : 0;
     const rateB = b.assigned ? b.done/b.assigned : 0;
     return rateB - rateA;
@@ -3075,7 +3079,7 @@ function renderChangeReasonFilterOptions(){
   sel.value = changeFilters.reason;
 
   const agentSel = document.getElementById('changeAgentFilter');
-  const agentsInData = [...new Set([...AGENTS, ...changeRequests.map(o=>o.checkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  const agentsInData = [...new Set([...AGENTS, ...changeRequests.map(o=>o.checkedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned' && isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All dispatch handlers</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = changeFilters.agent;
 
@@ -3256,7 +3260,7 @@ function computeRtowrTeamLeaderboard(data, team){
     else if(o.status==='REJECTED') map[a].rejected++;
     else map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     const rateA = a.assigned ? a.approved/a.assigned : 0;
     const rateB = b.assigned ? b.approved/b.assigned : 0;
     return rateB - rateA;
@@ -3301,7 +3305,7 @@ function applyRtowrFilters(){
 }
 function renderRtowrReasonFilterOptions(){
   const agentSel = document.getElementById('rtowrAgentFilter');
-  const agentsInData = [...new Set([...AGENTS, ...rtoWrongReceived.map(o=>o.raisedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  const agentsInData = [...new Set([...AGENTS, ...rtoWrongReceived.map(o=>o.raisedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned' && isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All people</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = rtowrFilters.agent;
 
@@ -3490,7 +3494,7 @@ function renderRefundExecLeaderboard(){
     if(!map[a]) map[a] = {agent:a, assigned:0};
     map[a].assigned++;
   });
-  const rows = Object.values(map).sort((a,b)=>b.assigned-a.assigned).map(a=>`
+  const rows = Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>b.assigned-a.assigned).map(a=>`
     <div class="lb-grid" style="grid-template-columns:130px 1fr 60px;">
       <div class="lb-name">${escapeHtml(a.agent)}</div>
       <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.min(100, a.assigned*15)}%"></div></div>
@@ -3510,7 +3514,7 @@ function computeRefundAgentLeaderboard(data){
     map[a].assigned++;
     if(o.status==='PROCESSED') map[a].done++; else map[a].pending++;
   });
-  return Object.values(map).sort((a,b)=>{
+  return Object.values(map).filter(a=>isActiveAgent_(a.agent)).sort((a,b)=>{
     const rateA = a.assigned ? a.done/a.assigned : 0;
     const rateB = b.assigned ? b.done/b.assigned : 0;
     return rateB - rateA;
@@ -3559,7 +3563,7 @@ function renderRefundReasonFilterOptions(){
   sel.value = refundFilters.reason;
 
   const agentSel = document.getElementById('refundAgentFilter');
-  const agentsInData = [...new Set([...AGENTS, ...refundRequests.map(o=>o.processedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned').sort();
+  const agentsInData = [...new Set([...AGENTS, ...refundRequests.map(o=>o.processedBy||'Unassigned')])].filter(a=>a && a!=='Unassigned' && isActiveAgent_(a)).sort();
   agentSel.innerHTML = '<option value="ALL">All processors</option>' + agentsInData.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   agentSel.value = refundFilters.agent;
 
@@ -6289,7 +6293,7 @@ function loadUsersList(){
     .then(res=>{
       if(!checkAuthResult(res)) return;
       if(!res.ok){ box.innerHTML = `<div style="color:var(--red);font-size:12.5px;">${escapeHtml(res.error||'Failed to load users')}</div>`; return; }
-      box.innerHTML = res.users.map(u=>`
+      box.innerHTML = res.users.filter(u=>u.active).map(u=>`
         <div class="user-row">
           <div>
             <div class="name">${escapeHtml(u.displayName)} <span class="role-pill">${escapeHtml(u.role)}</span>${u.active?'':' <span style="color:var(--red);font-weight:700;">(inactive)</span>'}</div>
