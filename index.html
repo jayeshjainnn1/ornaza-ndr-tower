@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-10-23.1">
+<meta name="app-version" content="2026-10-26.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -5797,8 +5797,25 @@ function bootstrapFromServer(){
     .then(res=>{ if(checkAuthResult(res)) onBootstrapSuccess(res); })
     .catch(err=>{ console.warn('Bootstrap failed (offline?):', err); updateSyncBadge(); });
 }
+let lastBootstrapSig = '';
+function anyPendingChanges_(){
+  return Object.keys(pendingChanges).length || Object.keys(rtoPendingChanges).length || Object.keys(redPendingChanges).length ||
+    Object.keys(waPendingChanges).length || Object.keys(dispatchPendingChanges).length || Object.keys(changePendingChanges).length ||
+    Object.keys(rtowrPendingChanges).length || Object.keys(refundPendingChanges).length;
+}
 function onBootstrapSuccess(res){
   if(!res || !res.ok) return;
+  // PERFORMANCE: if the server data is identical to last time, and nothing is
+  // waiting to sync and no unsaved draft is open, there is nothing to redraw.
+  // Previously every 15s all 8 modules were fully re-rendered, which froze the UI.
+  let sig = '';
+  try{ const c = Object.assign({}, res); delete c.serverTime; sig = JSON.stringify(c); }catch(e){ sig = ''; }
+  if(sig && sig === lastBootstrapSig && !anyPendingChanges_()){
+    lastSyncTime = new Date();
+    updateSyncBadge();
+    return;
+  }
+  lastBootstrapSig = sig;
   const serverOrders = res.orders || [];
   const merged = serverOrders.map(so => pendingChanges[so.id] ? Object.assign({}, so, pendingChanges[so.id].payload) : so);
   Object.keys(pendingChanges).forEach(id=>{
@@ -5965,14 +5982,15 @@ function onBootstrapSuccess(res){
   saveChangeRequestsCache();
   saveRtowrEntriesCache();
   saveRefundRequestsCache();
-  renderAll();
-  renderAllRto();
-  renderAllRed();
-  renderAllWa();
-  renderAllDispatch();
-  renderAllChange();
-  renderAllRtowr();
-  renderAllRefund();
+  // Only redraw the module being looked at; others redraw on switchModule().
+  if(currentModule==='rto') renderAllRto();
+  else if(currentModule==='returns') renderAllRed();
+  else if(currentModule==='wa') renderAllWa();
+  else if(currentModule==='dispatch') renderAllDispatch();
+  else if(currentModule==='change') renderAllChange();
+  else if(currentModule==='rtowr') renderAllRtowr();
+  else if(currentModule==='refund') renderAllRefund();
+  else renderAll();
   if(Object.keys(pendingChanges).length) attemptSync();
   if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
   if(Object.keys(redPendingChanges).length) attemptSyncRed();
@@ -6657,8 +6675,9 @@ function exportCSV(){
 }
 
 /* ---------------- events ---------------- */
+function debounceFn_(fn, ms){ let t; return function(e){ const a=arguments, self=this; clearTimeout(t); t=setTimeout(()=>fn.apply(self,a), ms); }; }
 function bindEvents(){
-  document.getElementById('searchInput').addEventListener('input', e=>{ filters.search = e.target.value; renderTable(); });
+  document.getElementById('searchInput').addEventListener('input', debounceFn_(e=>{ filters.search = e.target.value; renderTable(); }, 200));
   document.getElementById('statusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#statusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6706,7 +6725,7 @@ function bindEvents(){
   document.getElementById('syncBtn').addEventListener('click', bootstrapFromServer);
 
   // ---- Prepaid RTO toolbar ----
-  document.getElementById('rtoSearchInput').addEventListener('input', e=>{ rtoFilters.search = e.target.value; renderRtoTable(); });
+  document.getElementById('rtoSearchInput').addEventListener('input', debounceFn_(e=>{ rtoFilters.search = e.target.value; renderRtoTable(); }, 200));
   document.getElementById('rtoStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#rtoStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6732,7 +6751,7 @@ function bindEvents(){
   });
 
   // ---- Return / Exchange / Damage toolbar ----
-  document.getElementById('redSearchInput').addEventListener('input', e=>{ redFilters.search = e.target.value; renderRedTable(); });
+  document.getElementById('redSearchInput').addEventListener('input', debounceFn_(e=>{ redFilters.search = e.target.value; renderRedTable(); }, 200));
   document.getElementById('redStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#redStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6758,7 +6777,7 @@ function bindEvents(){
   });
 
   // ---- WhatsApp Issue Log toolbar ----
-  document.getElementById('waSearchInput').addEventListener('input', e=>{ waFilters.search = e.target.value; renderWaTable(); });
+  document.getElementById('waSearchInput').addEventListener('input', debounceFn_(e=>{ waFilters.search = e.target.value; renderWaTable(); }, 200));
   document.getElementById('waStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#waStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6784,7 +6803,7 @@ function bindEvents(){
   });
 
   // ---- New Item Dispatch Log toolbar ----
-  document.getElementById('dispatchSearchInput').addEventListener('input', e=>{ dispatchFilters.search = e.target.value; renderDispatchTable(); });
+  document.getElementById('dispatchSearchInput').addEventListener('input', debounceFn_(e=>{ dispatchFilters.search = e.target.value; renderDispatchTable(); }, 200));
   document.getElementById('dispatchStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#dispatchStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6809,7 +6828,7 @@ function bindEvents(){
   });
 
   // ---- Order Change & Hold Log toolbar ----
-  document.getElementById('changeSearchInput').addEventListener('input', e=>{ changeFilters.search = e.target.value; renderChangeTable(); });
+  document.getElementById('changeSearchInput').addEventListener('input', debounceFn_(e=>{ changeFilters.search = e.target.value; renderChangeTable(); }, 200));
   document.getElementById('changeStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#changeStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6845,7 +6864,7 @@ function bindEvents(){
   });
 
   // ---- RTO Wrong Received Log toolbar ----
-  document.getElementById('rtowrSearchInput').addEventListener('input', e=>{ rtowrFilters.search = e.target.value; renderRtowrTable(); });
+  document.getElementById('rtowrSearchInput').addEventListener('input', debounceFn_(e=>{ rtowrFilters.search = e.target.value; renderRtowrTable(); }, 200));
   document.getElementById('rtowrStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#rtowrStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6871,7 +6890,7 @@ function bindEvents(){
   });
 
   // ---- Refund Log toolbar ----
-  document.getElementById('refundSearchInput').addEventListener('input', e=>{ refundFilters.search = e.target.value; renderRefundTable(); });
+  document.getElementById('refundSearchInput').addEventListener('input', debounceFn_(e=>{ refundFilters.search = e.target.value; renderRefundTable(); }, 200));
   document.getElementById('refundStatusChips').addEventListener('click', e=>{
     const chip = e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#refundStatusChips .chip').forEach(c=>c.classList.remove('active'));
@@ -6927,15 +6946,19 @@ function bindEvents(){
   document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
   window.addEventListener('online', ()=>{ attemptSync(); attemptSyncRto(); attemptSyncRed(); attemptSyncWa(); attemptSyncDispatch(); attemptSyncChange(); attemptSyncRtowr(); attemptSyncRefund(); bootstrapFromServer(); });
   window.addEventListener('offline', ()=>updateSyncBadge());
-  setInterval(()=>{ if(Object.keys(pendingChanges).length) attemptSync(); }, 5000);
-  setInterval(()=>{ if(Object.keys(rtoPendingChanges).length) attemptSyncRto(); }, 5000);
-  setInterval(()=>{ if(Object.keys(redPendingChanges).length) attemptSyncRed(); }, 5000);
-  setInterval(()=>{ if(Object.keys(waPendingChanges).length) attemptSyncWa(); }, 5000);
-  setInterval(()=>{ if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch(); }, 5000);
-  setInterval(()=>{ if(Object.keys(changePendingChanges).length) attemptSyncChange(); }, 5000);
-  setInterval(()=>{ if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr(); }, 5000);
-  setInterval(()=>{ if(Object.keys(refundPendingChanges).length) attemptSyncRefund(); }, 5000);
-  setInterval(()=>{ if(authToken) bootstrapFromServer(); }, 15000);
+  setInterval(()=>{
+    if(Object.keys(pendingChanges).length) attemptSync();
+    if(Object.keys(rtoPendingChanges).length) attemptSyncRto();
+    if(Object.keys(redPendingChanges).length) attemptSyncRed();
+    if(Object.keys(waPendingChanges).length) attemptSyncWa();
+    if(Object.keys(dispatchPendingChanges).length) attemptSyncDispatch();
+    if(Object.keys(changePendingChanges).length) attemptSyncChange();
+    if(Object.keys(rtowrPendingChanges).length) attemptSyncRtowr();
+    if(Object.keys(refundPendingChanges).length) attemptSyncRefund();
+  }, 5000);
+  // Poll only while the tab is visible; refresh right away when it comes back.
+  setInterval(()=>{ if(authToken && !document.hidden) bootstrapFromServer(); }, 20000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && authToken) bootstrapFromServer(); });
 }
 
 /* ---------------- init ---------------- */
