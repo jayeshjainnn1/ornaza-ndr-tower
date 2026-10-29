@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-10-26.1">
+<meta name="app-version" content="2026-10-29.1">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -5777,7 +5777,7 @@ function renderAll(){
 /* ---------------- authenticated API layer ---------------- */
 function apiGet(action, extraParams){
   const params = new URLSearchParams(Object.assign({ action, token: authToken }, extraParams||{}));
-  return fetch(API_BASE + '?' + params.toString(), { method:'GET' }).then(r=>r.json());
+  return fetch(API_BASE + '?' + params.toString(), { method:'GET', cache:'no-store' }).then(r=>r.json());
 }
 function apiPost(action, extra){
   return fetch(API_BASE, {
@@ -5790,12 +5790,17 @@ function checkAuthResult(res){
   return true;
 }
 
+let bootstrapInFlight = false, bootstrapStartedAt = 0;
 function bootstrapFromServer(){
   if(!authToken) return;
+  // One request at a time: overlapping slow requests could arrive out of order
+  // and let an OLDER snapshot overwrite newer data (entries "not showing").
+  if(bootstrapInFlight && Date.now() - bootstrapStartedAt < 45000) return;
+  bootstrapInFlight = true; bootstrapStartedAt = Date.now();
   updateSyncBadge('syncing');
-  apiGet('bootstrap')
-    .then(res=>{ if(checkAuthResult(res)) onBootstrapSuccess(res); })
-    .catch(err=>{ console.warn('Bootstrap failed (offline?):', err); updateSyncBadge(); });
+  apiGet('bootstrap', { _t: Date.now() })
+    .then(res=>{ bootstrapInFlight=false; if(checkAuthResult(res)) onBootstrapSuccess(res); })
+    .catch(err=>{ bootstrapInFlight=false; console.warn('Bootstrap failed (offline?):', err); updateSyncBadge(); });
 }
 let lastBootstrapSig = '';
 function anyPendingChanges_(){
