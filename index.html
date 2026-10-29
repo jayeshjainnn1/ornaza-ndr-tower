@@ -8,7 +8,7 @@
      it against this exact string, not HTTP cache headers (etag/last-modified
      from GitHub Pages' CDN turned out to vary between requests for the same
      file, which was making the banner reappear even right after updating). -->
-<meta name="app-version" content="2026-10-29.1">
+<meta name="app-version" content="2026-10-29.2">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#d196a5">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -1850,8 +1850,25 @@ function statusStamp(status){
   if(status==='RTO') return `<span class="stamp rto">✕ RTO</span>`;
   return `<span class="stamp pending">↻ PENDING</span>`;
 }
+
+/* PERFORMANCE: tables render only the first N rows (rendering thousands of
+   <tr>s at once froze the app). "Show more" adds another batch. */
+const ROW_PAGE_ = 100;
+const rowLimits_ = {};
+function rowLimit_(key){ return rowLimits_[key] || ROW_PAGE_; }
+function showMoreRows_(key){
+  rowLimits_[key] = rowLimit_(key) + ROW_PAGE_;
+  const fn = { ndr:renderTable, rto:renderRtoTable, red:renderRedTable, wa:renderWaTable, dispatch:renderDispatchTable, change:renderChangeTable, rtowr:renderRtowrTable, refund:renderRefundTable }[key];
+  if(fn) fn();
+}
+function appendMoreRow_(body, key, total, fn){
+  const shown = Math.min(total, rowLimit_(key));
+  if(total <= shown) return;
+  const cols = (body.closest('table') && body.closest('table').querySelectorAll('thead th').length) || 10;
+  body.insertAdjacentHTML('beforeend', `<tr><td colspan="${cols}" style="text-align:center;padding:14px;"><button class="mini-btn" onclick="showMoreRows_('${key}')">Showing ${shown} of ${total} — show ${Math.min(ROW_PAGE_, total-shown)} more</button> <span style="color:var(--slate-soft);font-size:12px;">(search/filter to narrow down)</span></td></tr>`);
+}
 function renderTable(){
-  const data = applyFilters();
+  const allData = applyFilters(); const data = allData.slice(0, rowLimit_('ndr'));
   const body = document.getElementById('tableBody');
   document.getElementById('emptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
@@ -1878,6 +1895,7 @@ function renderTable(){
       </td>
     </tr>
   `).join('');
+  appendMoreRow_(body, 'ndr', allData.length, renderTable);
 }
 /* ============================================================================
    PREPAID RTO RESHIP TRACKER — second module, same offline/sync patterns as
@@ -2106,7 +2124,7 @@ function rtoStatusStamp(status){
   return `<span class="stamp pending">↻ PENDING</span>`;
 }
 function renderRtoTable(){
-  const data = applyRtoFilters();
+  const allData = applyRtoFilters(); const data = allData.slice(0, rowLimit_('rto'));
   const body = document.getElementById('rtoTableBody');
   document.getElementById('rtoEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
@@ -2131,6 +2149,7 @@ function renderRtoTable(){
       </td>
     </tr>
   `).join('');
+  appendMoreRow_(body, 'rto', allData.length, renderRtoTable);
 }
 function renderAllRto(){
   renderRtoStats();
@@ -2363,7 +2382,7 @@ function redStatusStamp(status){
   return `<span class="stamp pending">↻ PENDING</span>`;
 }
 function renderRedTable(){
-  const data = applyRedFilters();
+  const allData = applyRedFilters(); const data = allData.slice(0, rowLimit_('red'));
   const body = document.getElementById('redTableBody');
   document.getElementById('redEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
@@ -2389,6 +2408,7 @@ function renderRedTable(){
       </td>
     </tr>
   `).join('');
+  appendMoreRow_(body, 'red', allData.length, renderRedTable);
 }
 function renderAllRed(){
   renderRedStats();
@@ -2632,7 +2652,7 @@ function waStatusStamp(status){
   return `<span class="stamp rto">🔁 AWAITING REMARK</span>`;
 }
 function renderWaTable(){
-  const data = applyWaFilters();
+  const allData = applyWaFilters(); const data = allData.slice(0, rowLimit_('wa'));
   const body = document.getElementById('waTableBody');
   document.getElementById('waEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
@@ -2655,6 +2675,7 @@ function renderWaTable(){
       </td>
     </tr>
   `).join('');
+  appendMoreRow_(body, 'wa', allData.length, renderWaTable);
 }
 function renderAllWa(){
   renderWaStats();
@@ -2840,7 +2861,7 @@ function dispatchStatusStamp(status){
   return `<span class="stamp rto">🔁 PENDING</span>`;
 }
 function renderDispatchTable(){
-  const data = applyDispatchFilters();
+  const allData = applyDispatchFilters(); const data = allData.slice(0, rowLimit_('dispatch'));
   const body = document.getElementById('dispatchTableBody');
   document.getElementById('dispatchEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>`
@@ -2861,6 +2882,7 @@ function renderDispatchTable(){
       </td>
     </tr>
   `).join('');
+  appendMoreRow_(body, 'dispatch', allData.length, renderDispatchTable);
 }
 function renderAllDispatch(){
   renderDispatchStats();
@@ -3093,7 +3115,7 @@ function changeStatusStamp(o){
   return o.changeType==='CANCEL' ? `<span class="stamp rto">🛑 STOP DISPATCH</span>` : `<span class="stamp pending">🔁 AWAITING CHECK</span>`;
 }
 function renderChangeTable(){
-  const data = applyChangeFilters();
+  const allData = applyChangeFilters(); const data = allData.slice(0, rowLimit_('change'));
   const body = document.getElementById('changeTableBody');
   document.getElementById('changeEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>{
@@ -3118,6 +3140,7 @@ function renderChangeTable(){
     </tr>
   `;
   }).join('');
+  appendMoreRow_(body, 'change', allData.length, renderChangeTable);
 }
 function renderAllChange(){
   renderChangeStats();
@@ -3320,7 +3343,7 @@ function rtowrStatusStamp(o){
   return `<span class="stamp pending">🔁 PENDING</span>`;
 }
 function renderRtowrTable(){
-  const data = applyRtowrFilters();
+  const allData = applyRtowrFilters(); const data = allData.slice(0, rowLimit_('rtowr'));
   const body = document.getElementById('rtowrTableBody');
   document.getElementById('rtowrEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>{
@@ -3342,6 +3365,7 @@ function renderRtowrTable(){
     </tr>
   `;
   }).join('');
+  appendMoreRow_(body, 'rtowr', allData.length, renderRtowrTable);
 }
 function renderAllRtowr(){
   renderRtowrStats();
@@ -3584,7 +3608,7 @@ function refundProofCell(o){
   return `<span class="proof-missing">— none —</span>`;
 }
 function renderRefundTable(){
-  const data = applyRefundFilters();
+  const allData = applyRefundFilters(); const data = allData.slice(0, rowLimit_('refund'));
   const body = document.getElementById('refundTableBody');
   document.getElementById('refundEmptyState').style.display = data.length ? 'none' : 'block';
   body.innerHTML = data.map(o=>{
@@ -3609,6 +3633,7 @@ function renderRefundTable(){
     </tr>
   `;
   }).join('');
+  appendMoreRow_(body, 'refund', allData.length, renderRefundTable);
 }
 function renderAllRefund(){
   renderRefundStats();
